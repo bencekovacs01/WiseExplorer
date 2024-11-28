@@ -28,6 +28,8 @@ export default async function handler(
             buffer,
         );
         res.json(JSON.parse(standardPois));
+
+        // res.json({ message: 'Success' });
     } catch (error: any) {
         res.status(500).json({ message: error.message });
     }

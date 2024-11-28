@@ -6,9 +6,11 @@ import React, {
     useRef,
 } from 'react';
 import L from 'leaflet';
-import { IMainInstruction } from '../models/models';
+import { ICoordinate, IMainInstruction, IPosition } from '../models/models';
 
 interface MapContextType {
+    pois: IPosition[];
+    setPois: (pois: IPosition[]) => void;
     instructions: IMainInstruction[];
     setInstructions: (instructions: IMainInstruction[]) => void;
     instructionsVisible: boolean;
@@ -17,6 +19,10 @@ interface MapContextType {
     instructionWaypointsRef: React.RefObject<L.LatLng[]>;
     mapRef: React.RefObject<L.Map[] | null>;
     handleInstructionClicked: (index: number) => void;
+    currentPosition: IPosition | null;
+    setCurrentPosition: (position: IPosition | null) => void;
+    coordinates: ICoordinate[] | null;
+    setCoordinates: (coords: ICoordinate[]) => void;
 }
 
 const MapContext = createContext<MapContextType | undefined>(undefined);
@@ -24,9 +30,14 @@ const MapContext = createContext<MapContextType | undefined>(undefined);
 export const MapProvider: React.FC<{ children: ReactNode }> = ({
     children,
 }) => {
+    const [pois, setPois] = useState<IPosition[]>([]);
     const [instructions, setInstructions] = useState<IMainInstruction[]>([]);
     const [instructionsVisible, setInstructionsVisible] =
         useState<boolean>(false);
+    const [currentPosition, setCurrentPosition] = useState<IPosition | null>(
+        null,
+    );
+    const [coordinates, setCoordinates] = useState<ICoordinate[] | null>(null);
 
     const markersRef = useRef<L.Circle[]>([]);
     const instructionWaypointsRef = useRef<L.LatLng[]>([]);
@@ -44,6 +55,8 @@ export const MapProvider: React.FC<{ children: ReactNode }> = ({
     };
 
     const value = {
+        pois,
+        setPois,
         instructions,
         setInstructions,
         instructionsVisible,
@@ -52,6 +65,10 @@ export const MapProvider: React.FC<{ children: ReactNode }> = ({
         instructionWaypointsRef,
         mapRef,
         handleInstructionClicked,
+        currentPosition,
+        setCurrentPosition,
+        coordinates,
+        setCoordinates,
     };
 
     return <MapContext.Provider value={value}>{children}</MapContext.Provider>;

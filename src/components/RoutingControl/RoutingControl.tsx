@@ -1,9 +1,12 @@
-import { useEffect, useRef, useState } from 'react';
+import React, { useEffect } from 'react';
 import L from 'leaflet';
-// import 'leaflet-routing-machine';
 import { useMap } from 'react-leaflet';
 import { IInstruction, IPosition, IWaypoint } from '@/src/models/models';
 import { useMapContext } from '@/src/contexts/MapContext';
+import 'leaflet-routing-machine';
+import '../../plugins/L.Routing.OpenRouteServiceV2';
+import ORS_Router, { Alma } from '@/src/services/ORSRouter';
+import TestRouter from '@/src/services/TestRouter';
 
 interface RoutingControlProps {
     positions: IPosition[];
@@ -16,13 +19,9 @@ const RoutingControl: React.FC<RoutingControlProps> = ({ positions }) => {
         markersRef,
         instructionWaypointsRef,
         mapRef,
+        setCoordinates,
     } = useMapContext();
 
-    // const [instructionsVisible, setInstructionsVisible] =
-    //     useState<boolean>(false);
-
-    // const instructionWaypointsRef = useRef<L.LatLng[]>([]);
-    // const markersRef = useRef<L.Circle[]>([]);
     const map = useMap();
 
     useEffect(() => {
@@ -31,13 +30,19 @@ const RoutingControl: React.FC<RoutingControlProps> = ({ positions }) => {
     }, [map, mapRef]);
 
     useEffect(() => {
-        return;
-
         if (!map || positions?.length < 2) return;
 
         const waypoints = positions.map((position) =>
             L.latLng(position.coords.lat, position.coords.lng),
         );
+
+        const customMarker = L.icon({
+            iconUrl:
+                'https://unpkg.com/leaflet@1.9.3/dist/images/marker-icon.png',
+            iconSize: [25, 41],
+            iconAnchor: [12, 41],
+            popupAnchor: [1, -34],
+        });
 
         const routingControl = L.Routing.control({
             waypoints,
@@ -51,10 +56,47 @@ const RoutingControl: React.FC<RoutingControlProps> = ({ positions }) => {
             fitSelectedRoutes: true,
             showAlternatives: false,
             show: false,
+            createMarker: function (i, waypoint) {
+                return L.marker(waypoint.latLng, {
+                    icon: customMarker,
+                }).bindPopup(`Waypoint ${i + 1}`);
+            },
+            router: L.Routing.osrmv1({
+                serviceUrl: 'https://router.project-osrm.org/route/v1/',
+                // serviceUrl: 'https://api.openrouteservice.org/v2/directions/',
+                profile: 'car',
+                language: 'en',
+            }),
+            fetchOptions: {
+                headers: {
+                    Authorization: process.env.ORS_KEY,
+                },
+            },
+
+            // router: ORS_Router({
+            //     profile: 'driving-car',
+            //     language: 'hu-hu',
+            // }),
+
+            // router: new TestRouter({}),
+
+            // router: new Alma({
+            //     profile: 'driving-car',
+            // }),
+
+            // router: L.Routing.openrouteserviceV2(process.env.ORS_KEY || '', {
+            //     apiKey: process.env.REACT_APP_ORS_API_KEY || '',
+            //     orsOptions: {
+            //         profile: 'driving-car',
+            //     },
+            // }),
         })?.addTo?.(map);
 
         routingControl.on('routesfound', (e: any) => {
             const routes = e.routes;
+            console.log('route MODE:', routes?.[0]?.instructions?.[0]?.mode);
+
+            setCoordinates(routes[0]?.coordinates);
 
             const newInstructions = routes.map((route: any, index: number) => ({
                 routeNumber: index + 1,
@@ -75,6 +117,7 @@ const RoutingControl: React.FC<RoutingControlProps> = ({ positions }) => {
             );
 
             setInstructions(newInstructions);
+
             instructionWaypointsRef?.current?.splice(
                 0,
                 instructionWaypointsRef.current.length,
@@ -88,19 +131,17 @@ const RoutingControl: React.FC<RoutingControlProps> = ({ positions }) => {
                 markersRef?.current?.splice(0, markersRef?.current?.length);
             }
 
-            instructionWaypoints.forEach(
-                (waypoint: IWaypoint, index: number) => {
-                    const circle = L.circle(waypoint, {
-                        radius: 5,
-                        color: 'red',
-                        fillColor: '#f03',
-                        fillOpacity: 0,
-                        opacity: 0,
-                    }).addTo(map);
+            instructionWaypoints.forEach((waypoint: IWaypoint) => {
+                const circle = L.circle(waypoint, {
+                    radius: 5,
+                    color: 'red',
+                    fillColor: '#f03',
+                    fillOpacity: 0,
+                    opacity: 0,
+                }).addTo(map);
 
-                    markersRef.current?.push(circle);
-                },
-            );
+                markersRef.current?.push(circle);
+            });
 
             setInstructionsVisible(true);
         });
@@ -115,111 +156,12 @@ const RoutingControl: React.FC<RoutingControlProps> = ({ positions }) => {
         map,
         markersRef,
         positions,
+        setCoordinates,
         setInstructions,
         setInstructionsVisible,
     ]);
 
-    // const handleInstructionClicked = (index: number) => {
-    //     if (instructionWaypointsRef.current) {
-    //         const waypoint = instructionWaypointsRef.current[index];
-    //         markersRef.current.forEach((marker) =>
-    //             marker.setStyle({ opacity: 0 }),
-    //         );
-    //         markersRef.current[index].setStyle({ opacity: 1 });
-    //         map.setView(waypoint, 17);
-    //     }
-    // };
-
-    // const handleMouseLeave = (index: number) => {
-    //     if (markersRef.current[index]) {
-    //         markersRef.current[index].setStyle({ opacity: 0 });
-    //     }
-    // };
-
     return null;
-    // return instructionsVisible ? (
-    //     <div
-    //         style={{
-    //             position: 'absolute',
-    //             top: '10px',
-    //             right: '10px',
-    //             background: 'white',
-    //             zIndex: 100000,
-    //             padding: '10px',
-    //             borderRadius: '4px',
-    //             boxShadow: '0 0 5px rgba(0,0,0,0.8)',
-    //             height: 'calc(100vh / 2)',
-    //             width: 'calc(100vw / 2)',
-    //             overflow: 'scroll',
-    //         }}
-    //         onMouseDown={handleMouseDown}
-    //     >
-    //         <button
-    //             onClick={() => setInstructionsVisible(false)}
-    //             style={{
-    //                 position: 'absolute',
-    //                 top: '5px',
-    //                 right: '5px',
-    //                 background: 'red',
-    //                 color: 'white',
-    //                 border: 'none',
-    //                 borderRadius: '50%',
-    //                 width: '50px',
-    //                 height: '50px',
-    //                 cursor: 'pointer',
-    //                 fontSize: 20,
-    //             }}
-    //         >
-    //             X
-    //         </button>
-
-    //         {instructions.length > 0 ? (
-    //             instructions.map(({ routeNumber, instructions }) => (
-    //                 <div key={routeNumber}>
-    //                     <div style={{ fontWeight: 'bold', fontSize: 20 }}>
-    //                         Instructions
-    //                     </div>
-    //                     <ul style={{}}>
-    //                         {instructions.map(({ text, index }) => (
-    //                             <li
-    //                                 key={index}
-    //                                 // onMouseEnter={() => handleMouseEnter(index)}
-    //                                 // onMouseLeave={() => handleMouseLeave(index)}
-    //                                 onMouseDownCapture={() =>
-    //                                     handleMouseEnter(index)
-    //                                 }
-    //                                 style={{
-    //                                     cursor: 'pointer',
-    //                                     marginTop: 5,
-    //                                 }}
-    //                             >
-    //                                 {`${index + 1}. ${text?.text}`}
-    //                             </li>
-    //                         ))}
-    //                     </ul>
-    //                 </div>
-    //             ))
-    //         ) : (
-    //             <p>No routes found. Please adjust your waypoints.</p>
-    //         )}
-    //     </div>
-    // ) : (
-    //     <button
-    //         onClick={() => setInstructionsVisible(true)}
-    //         style={{
-    //             position: 'absolute',
-    //             top: '10px',
-    //             right: '10px',
-    //             background: 'white',
-    //             zIndex: 1000,
-    //             padding: '10px',
-    //             borderRadius: '4px',
-    //             boxShadow: '0 0 5px rgba(0,0,0,0.8)',
-    //         }}
-    //     >
-    //         Show Instructions
-    //     </button>
-    // );
 };
 
 export default RoutingControl;

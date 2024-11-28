@@ -32,10 +32,10 @@ export default async function handler(
                         latitude: 24.59236,
                         longitude: 46.52909,
                     },
-                    // {
-                    //     latitude: 24.59242,
-                    //     longitude: 46.53456,
-                    // },
+                    {
+                        latitude: 24.59242,
+                        longitude: 46.53456,
+                    },
                     // {
                     //     latitude: 24.59888,
                     //     longitude: 46.52346,
@@ -49,6 +49,7 @@ export default async function handler(
         // const route = await greedyService.findMinimumDistanceRoute(pois);
         // res.json(route);
     } catch (error: any) {
+        console.log('!@#!@##@!#@@#!', error)
         res.status(500).json({ message: error.message });
     }
 }

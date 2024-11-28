@@ -70,7 +70,7 @@ const InstructionsPanel = () => {
                     </div>
                 ))
             ) : (
-                <p>No routes found. Please adjust your waypoints.</p>
+                <div>No routes found. Please adjust your waypoints.</div>
             )}
         </div>
     ) : (

@@ -1,8 +1,5 @@
 import axios, { AxiosInstance } from 'axios';
 import Coordinate from '../models/Coordinate';
-import dotenv from 'dotenv';
-
-dotenv.config();
 
 /**
  * POIService provides methods to fetch Points of Interest (POIs) using OpenRouteService API.
@@ -39,12 +36,12 @@ export class POIService {
             request: 'pois',
             geometry: {
                 bbox: [
-                    [start.latitude, start.longitude],
-                    [end.latitude, end.longitude],
+                    [start.longitude, start.latitude],
+                    [end.longitude, end.latitude],
                 ],
                 geojson: {
                     type: 'Point',
-                    coordinates: [start.latitude, start.longitude],
+                    coordinates: [start.longitude, start.latitude],
                 },
                 buffer: buffer,
             },

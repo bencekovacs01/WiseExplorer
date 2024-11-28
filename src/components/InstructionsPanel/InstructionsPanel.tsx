@@ -1,26 +1,24 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useMapContext } from '@/src/contexts/MapContext';
 import {
     Box,
     Button,
     Paper,
-    Typography,
-    List,
-    ListItem,
     ListItemText,
     IconButton,
     SwipeableDrawer,
 } from '@mui/material';
-import CloseIcon from '@mui/icons-material/Close';
 import { SkipNext, SkipPrevious } from '@mui/icons-material';
-import { translateText } from '@/src/utils/deepl.utils';
+import { IPosition } from '@/src/models/models';
 
-const InstructionsPanel = () => {
+const InstructionsPanel: React.FC = () => {
     const {
         instructions,
         instructionsVisible,
         setInstructionsVisible,
         handleInstructionClicked,
+        currentPosition,
+        instructionWaypointsRef,
     } = useMapContext();
 
     const instructionSet = instructions?.[0]?.instructions;
@@ -49,12 +47,41 @@ const InstructionsPanel = () => {
         });
     };
 
-    // useEffect(() => {
-    //     translateText(
-    //         instructionSet?.[currentInstructionIndex]?.text?.text,
-    //         'hu',
-    //     );
-    // }, [instructionSet, currentInstructionIndex]);
+    const getDistance = (
+        pos1: IPosition | null,
+        pos2: IPosition | null,
+    ): number => {
+        if (!pos1 || !pos2) return 0;
+
+        return Math.sqrt(
+            Math.pow(pos1.coords.lat - pos2.coords.lat, 2) +
+                Math.pow(pos1.coords.lng - pos2.coords.lng, 2),
+        );
+    };
+
+    const array = (instructionWaypointsRef.current || []).map((latlng) => ({
+        coords: { lat: latlng.lat, lng: latlng.lng },
+        text: undefined,
+    }));
+
+    useEffect(() => {
+        const checkAndUpdateInstruction = (): void => {
+            if (!array.length || !instructionSet) return;
+
+            const top = array?.[currentInstructionIndex];
+
+            if (!top) return;
+
+            const distance = getDistance(currentPosition, top) * 100;
+            const threshold = 0.01;
+
+            if (distance < threshold) {
+                setCurrentInstructionIndex((prevIndex) => prevIndex + 1);
+            }
+        };
+
+        checkAndUpdateInstruction();
+    }, [currentPosition]);
 
     return (
         <>
@@ -115,6 +142,7 @@ const InstructionsPanel = () => {
                             display: 'flex',
                             borderLeft: '1px solid black',
                             borderRight: '1px solid black',
+                            padding: '10px',
                         }}
                     >
                         <ListItemText
@@ -122,51 +150,6 @@ const InstructionsPanel = () => {
                             sx={{ cursor: 'pointer', textAlign: 'center' }}
                         />
                     </Box>
-
-                    {/* {instructions.length > 0 ? (
-                        <List
-                            sx={{
-                                width: '60%',
-                                height: '100%',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                            }}
-                        >
-                            {instructions.map(
-                                ({ routeNumber, instructions }) => (
-                                    <Box key={routeNumber} mb={2}>
-                                        {instructions.map(({ text, index }) => (
-                                            <ListItem
-                                                component={'button'}
-                                                key={index}
-                                                onClick={() =>
-                                                    handleInstructionClicked(
-                                                        index,
-                                                    )
-                                                }
-                                                sx={{
-                                                    '&:hover': {
-                                                        backgroundColor:
-                                                            '#f0f0f0',
-                                                    },
-                                                }}
-                                            >
-                                                <ListItemText
-                                                    primary={`${text?.text}`}
-                                                    sx={{ cursor: 'pointer' }}
-                                                />
-                                            </ListItem>
-                                        ))}
-                                    </Box>
-                                ),
-                            )}
-                        </List>
-                    ) : (
-                        <Typography>
-                            No routes found. Please adjust your waypoints.
-                        </Typography>
-                    )} */}
-
                     <Box
                         sx={{
                             width: '20%',

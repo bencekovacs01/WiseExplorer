@@ -1,18 +1,16 @@
 import axios from 'axios';
 import Coordinate from '../models/Coordinate';
 import Route from '../models/Route';
-import dotenv from 'dotenv';
-
-dotenv.config();
+import { axiosORS } from '../utils/axios';
+import { orsApi } from '../utils/apiWrapper';
 
 /**
  * GreedyService provides methods to find the minimum distance route among a set of points using greedy method.
  */
 class GreedyService {
-    private client = axios.create();
+    private client = axiosORS;
+    private orsApi = orsApi;
     private ORS_KEY = process.env.ORS_KEY as string;
-    private openRouteServiceBaseUrl =
-        'https://api.openrouteservice.org/v2/directions/driving-car';
 
     /**
      * Creates an instance of GreedyService.
@@ -92,21 +90,20 @@ class GreedyService {
         const endString = `${end.latitude},${end.longitude}`;
 
         try {
-            const response = await this.client.get(
-                this.openRouteServiceBaseUrl,
+            const responseData = await this.orsApi.get(
+                '/directions/driving-car',
                 {
-                    params: {
-                        api_key: this.ORS_KEY,
-                        start: startString,
-                        end: endString,
-                    },
+                    start: startString,
+                    end: endString,
                 },
             );
-            return this.parseDistanceFromResponse(response.data);
+
+            return this.parseDistanceFromResponse(responseData);
         } catch (error: any) {
-            console.error(`Error getting directions: ${error.response.status}`);
             throw new Error(
-                `Error getting directions: ${error.response.status}`,
+                `Error getting directions: ${
+                    error?.response?.status || error?.response || error?.message
+                }`,
             );
         }
     }

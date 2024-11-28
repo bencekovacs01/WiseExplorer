@@ -3,14 +3,14 @@ import dynamic from 'next/dynamic';
 import { IMainInstruction } from '@/src/models/models';
 import { MapProvider } from '@/src/contexts/MapContext';
 import InstructionsPanel from '../InstructionsPanel/InstructionsPanel';
-
 import { Box } from '@mui/material';
+import Loader from '../Loader/Loader';
 
 const MapPage = () => {
     const Map = useMemo(
         () =>
             dynamic(() => import('../OpenStreetMap/OpenStreetMap'), {
-                loading: () => <p>A map is loading</p>,
+                loading: () => <Loader loading />,
                 ssr: false,
             }),
         [],

@@ -1,12 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react';
-import {
-    MapContainer,
-    TileLayer,
-    Marker,
-    Popup,
-    useMapEvents,
-    Polyline,
-} from 'react-leaflet';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import { greedyPois } from '@/src/constants/constants';
 import 'leaflet/dist/leaflet.css';
@@ -14,8 +7,12 @@ import L from 'leaflet';
 import 'leaflet-routing-machine';
 import { IPosition } from '@/src/models/models';
 import RoutingControl from '../RoutingControl/RoutingControl';
-import { useMapContext } from '@/src/contexts/MapContext';
 import PositionTracker from '../PositionTracker/PositionTracker';
+import { useMapContext } from '@/src/contexts/MapContext';
+import { Button } from '@mui/material';
+import { GpsFixed, GpsNotFixed, GpsOff } from '@mui/icons-material';
+import Loader from '../Loader/Loader';
+import Selector from '../Selector/Selector';
 
 interface IRouteResponse {
     route: IRoute[];
@@ -32,33 +29,23 @@ const OpenStreetMap = () => {
     const [loading, setLoading] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
 
-    const {
-        instructions,
-        instructionsVisible,
-        setInstructionsVisible,
-        handleInstructionClicked,
-    } = useMapContext();
-
     const [positions, setPositions] = useState<IPosition[]>([]);
-    // console.log(
-    //     '🚀 ~ file: OpenStreetMap.tsx:43 ~ OpenStreetMap ~ positions:',
-    //     positions,
-    // );
-    const [userLocationSet, setUserLocationSet] = useState<boolean>(false);
+    console.log('positions', positions);
+    const [currentPositionVisible, setcurrentPositionVisible] =
+        useState<boolean>(false);
+
+    const { currentPosition, mapRef, pois } = useMapContext();
+    console.log('pois', pois);
 
     const fetchDataGreedy = async () => {
+        setLoading(true);
         try {
             const response = await fetch('/api/pois/find-route-greedy', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
                 body: JSON.stringify(greedyPois),
-            });
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-            const result = await response.json();
+            }).then((res) => res?.json?.());
+
+            const result = await response;
             setRouteResponse(result?.[0]);
         } catch (error) {
             setError(error instanceof Error ? error.message : 'Unknown error');
@@ -67,41 +54,59 @@ const OpenStreetMap = () => {
         }
     };
 
-    const LocationMarker = () => {
-        const map = useMapEvents({
-            // click(e) {
-            //     setPositions((currentPositions) => [
-            //         ...currentPositions,
-            //         { coords: e.latlng },
-            //     ]);
-            // },
-            // locationfound(e) {
-            //     if (!userLocationSet) {
-            //         setPositions((currentPositions) => [
-            //             ...currentPositions,
-            //             { coords: e.latlng, text: 'My position!' },
-            //         ]);
-            //         setUserLocationSet(true);
-            //         map.flyTo(e.latlng, map.getZoom() * 1.3, {
-            //             animate: true,
-            //             duration: 2,
-            //         });
-            //     }
-            // },
-        });
-
-        // useEffect(() => {
-        //     if (map) {
-        //         map.locate();
-        //     }
-        // }, [map]);
-
-        return null;
+    const flyToCurrentPosition = () => {
+        if (currentPosition) {
+            if (mapRef?.current) {
+                mapRef?.current?.[0]?.flyTo?.(
+                    currentPosition.coords,
+                    mapRef?.current?.[0]?.getZoom(),
+                    {
+                        animate: true,
+                        duration: 0.5,
+                    },
+                );
+            }
+        } else {
+            alert('Current location is not available.');
+        }
     };
+
+    const isInViewport = useCallback(() => {
+        const map = mapRef.current?.[0];
+        if (map && currentPosition) {
+            const bounds = map?.getBounds();
+            return bounds.contains(
+                L.latLng(
+                    currentPosition.coords.lat,
+                    currentPosition.coords.lng,
+                ),
+            );
+        }
+        return false;
+    }, [currentPosition, mapRef]);
 
     useEffect(() => {
         fetchDataGreedy();
     }, []);
+
+    useEffect(() => {
+        const map = mapRef?.current?.[0];
+        if (map) {
+            map.on('moveend', () => {
+                const inViewport = isInViewport();
+                setcurrentPositionVisible(inViewport);
+            });
+        }
+
+        return () => {
+            if (map) {
+                map.off('moveend', () => {
+                    const inViewport = isInViewport();
+                    setcurrentPositionVisible(inViewport);
+                });
+            }
+        };
+    }, [isInViewport, mapRef]);
 
     useEffect(() => {
         if (routeResponse) {
@@ -115,6 +120,12 @@ const OpenStreetMap = () => {
             ]);
         }
     }, [routeResponse]);
+
+    const renderGpsIcon = () => {
+        if (!currentPosition) return <GpsOff />;
+
+        return currentPositionVisible ? <GpsFixed /> : <GpsNotFixed />;
+    };
 
     return (
         <div
@@ -141,48 +152,37 @@ const OpenStreetMap = () => {
                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 />
 
-                {positions.map((position, index) => (
-                    <Marker
-                        key={index}
-                        position={position?.coords}
-                        icon={
-                            new L.Icon({
-                                iconUrl:
-                                    'https://unpkg.com/leaflet@1.9.3/dist/images/marker-icon.png',
-                                iconSize: [25, 41],
-                                iconAnchor: [12, 41],
-                                popupAnchor: [1, -34],
-                            })
-                        }
-                    >
-                        <Popup>
-                            {position.text || (
-                                <div>
-                                    <div
-                                        style={{
-                                            width: '100%',
-                                            textAlign: 'center',
-                                            fontWeight: '800',
-                                            marginBottom: '5px',
-                                        }}
-                                    >
-                                        Marker {index + 1}
-                                    </div>
-                                    Latitude: {position.coords.lat}
-                                    <br />
-                                    Longitude: {position.coords.lng}
-                                </div>
-                            )}
-                        </Popup>
-                    </Marker>
-                ))}
                 {positions?.length > 1 && (
                     <RoutingControl positions={positions} />
                 )}
 
-                <LocationMarker />
+                {pois?.length > 1 && <RoutingControl positions={pois} />}
+
                 <PositionTracker />
+
+                <Button
+                    variant="contained"
+                    color="primary"
+                    onClick={flyToCurrentPosition}
+                    style={{
+                        position: 'absolute',
+                        bottom: '40px',
+                        right: '20px',
+                        zIndex: 1000,
+                        height: '50px',
+                        width: '50px',
+                        borderRadius: '50%',
+                        padding: 0,
+                        minWidth: 0,
+                    }}
+                >
+                    {renderGpsIcon()}
+                </Button>
+
+                <Selector />
             </MapContainer>
+
+            {loading && <Loader loading />}
         </div>
     );
 };

@@ -12,3 +12,8 @@ export const greedyPois = [
         longitude: 46.52909,
     },
 ];
+
+export const PoiUrl = {
+    findRouteGreedy: '/find-route-greedy',
+    pois: '/poi-standard',
+};

@@ -3,9 +3,6 @@ import Coordinate from '../models/Coordinate';
 import Route from '../models/Route';
 import { FeatureCollection } from '../models/FeatureCollection';
 import { POIService } from './POIService';
-import dotenv from 'dotenv';
-
-dotenv.config();
 
 /**
  * BacktrackingService provides methods to find the minimum distance route among a set of points using the backtracking method.

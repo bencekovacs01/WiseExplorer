@@ -99,3 +99,6 @@ $RECYCLE.BIN/
 !.yarn/plugins
 !.yarn/sdks
 !.yarn/versions
+
+server.cert
+server.key

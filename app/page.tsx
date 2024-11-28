@@ -1,7 +1,5 @@
 'use client';
 
-import Image from 'next/image';
-
 export default function Page() {
     const pois = [
         { latitude: 123.12, longitude: 456.34 },
@@ -108,49 +106,51 @@ export default function Page() {
     };
 
     return (
-        <div className="flex flex-col items-center justify-center h-screen">
-            <h1 className="text-4xl font-bold mb-4">NodeJs!</h1>
+        <>
+            <div className="flex flex-col items-center justify-center h-screen">
+                <h1 className="text-4xl font-bold mb-4">NodeJs!</h1>
 
-            <button
-                style={{
-                    backgroundColor: 'wheat',
-                    fontSize: '24px',
-                    padding: '10px',
-                    color: 'black',
-                    borderRadius: '10px',
-                }}
-                onClick={() => handleClick()}
-            >
-                Greedy
-            </button>
+                <button
+                    style={{
+                        backgroundColor: 'wheat',
+                        fontSize: '24px',
+                        padding: '10px',
+                        color: 'black',
+                        borderRadius: '10px',
+                    }}
+                    onClick={() => handleClick()}
+                >
+                    Greedy
+                </button>
 
-            <button
-                style={{
-                    backgroundColor: 'wheat',
-                    fontSize: '24px',
-                    padding: '10px',
-                    color: 'black',
-                    borderRadius: '10px',
-                    marginTop: '15px',
-                }}
-                onClick={() => handleBacktrackingClick()}
-            >
-                Backtracking
-            </button>
+                <button
+                    style={{
+                        backgroundColor: 'wheat',
+                        fontSize: '24px',
+                        padding: '10px',
+                        color: 'black',
+                        borderRadius: '10px',
+                        marginTop: '15px',
+                    }}
+                    onClick={() => handleBacktrackingClick()}
+                >
+                    Backtracking
+                </button>
 
-            <button
-                style={{
-                    backgroundColor: 'wheat',
-                    fontSize: '24px',
-                    padding: '10px',
-                    color: 'black',
-                    borderRadius: '10px',
-                    marginTop: '15px',
-                }}
-                onClick={() => handlPoiStandardClick()}
-            >
-                POI Standard
-            </button>
-        </div>
+                <button
+                    style={{
+                        backgroundColor: 'wheat',
+                        fontSize: '24px',
+                        padding: '10px',
+                        color: 'black',
+                        borderRadius: '10px',
+                        marginTop: '15px',
+                    }}
+                    onClick={() => handlPoiStandardClick()}
+                >
+                    POI Standard
+                </button>
+            </div>
+        </>
     );
 }

@@ -1,8 +1,5 @@
 export interface IPosition {
-    coords: {
-        lat: number;
-        lng: number;
-    };
+    coords: ICoordinate;
     text?: string;
 }
 
@@ -28,6 +25,11 @@ export interface IMainInstruction {
 }
 
 export interface IWaypoint {
+    lat: number;
+    lng: number;
+}
+
+export interface ICoordinate {
     lat: number;
     lng: number;
 }
