@@ -11,6 +11,7 @@ export class BacktrackingService {
     private client: AxiosInstance = axios.create();
     private ORS_KEY: string = process.env.ORS_KEY as string;
     private matrixBaseUrl: string =
+        // 'http://localhost:8080/ors/v2/matrix/driving-car';
         'https://api.openrouteservice.org/v2/matrix/driving-car';
     private poiService: POIService = new POIService();
 
@@ -32,24 +33,22 @@ export class BacktrackingService {
      * @returns A promise that resolves to the minimum distance route.
      */
     public async findMinimumDistanceRouteBt(
-        start: Coordinate,
-        end: Coordinate,
-        buffer: number = 250,
+        pois: Coordinate[],
     ): Promise<Route> {
-        const standardPois = await this.poiService.getPOIsStandard(
-            start,
-            end,
-            buffer,
-        );
+        // const standardPois = await this.poiService.getPOIsStandard(
+        //     start,
+        //     end,
+        //     buffer,
+        // );
 
-        const pois = this.extractPointsFromResponse(standardPois);
+        // const pois = this.extractPointsFromResponse(standardPois);
 
-        pois.push(new Coordinate(start.latitude, start.longitude));
-        pois.push(new Coordinate(end.latitude, end.longitude));
+        // pois.push(new Coordinate(start.latitude, start.longitude));
+        // pois.push(new Coordinate(end.latitude, end.longitude));
 
-        if (buffer > 250) {
-            return new Route(pois, 0);
-        }
+        // if (buffer > 250) {
+        //     return new Route(pois, 0);
+        // }
 
         const payloadPois = pois.map((poi) => [poi.longitude, poi.latitude]);
         const jsonContent = {

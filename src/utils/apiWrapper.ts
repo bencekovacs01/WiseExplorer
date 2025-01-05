@@ -38,7 +38,6 @@ class ApiWrapper {
             return response.data;
         } catch (error) {
             this.handleError(error as AxiosError);
-            this.handleError(error as AxiosError);
         }
     }
 

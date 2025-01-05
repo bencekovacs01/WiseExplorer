@@ -30,16 +30,8 @@ const Selector = () => {
                 latitude: e.latlng.lat,
                 longitude: e.latlng.lng,
             },
-            buffer: 250,
+            buffer: 950,
         }).then((res) => {
-            // console.log(
-            //     'res?.features',
-            //     res?.features?.map((feature: any) => ({
-            //         latitude: feature.geometry.coordinates[1],
-            //         longitude: feature.geometry.coordinates[0],
-            //     })),
-            // );
-
             const mapPositions = res?.features?.map((feature: any) => ({
                 coords: {
                     lat: feature.geometry.coordinates[1],
@@ -147,7 +139,7 @@ const Selector = () => {
                 position: 'absolute',
                 top: '20px',
                 right: '20px',
-                zIndex: 1000,
+                zIndex: 998,
                 height: '50px',
                 width: '50px',
                 borderRadius: '10%',
