@@ -5,14 +5,13 @@ import { IInstruction, IPosition, IWaypoint } from '@/src/models/models';
 import { useMapContext } from '@/src/contexts/MapContext';
 import 'leaflet-routing-machine';
 import '../../plugins/L.Routing.OpenRouteServiceV2';
-import ORS_Router, { Alma } from '@/src/services/ORSRouter';
-import TestRouter from '@/src/services/TestRouter';
 
 interface RoutingControlProps {
     positions: IPosition[];
 }
 
 const RoutingControl: React.FC<RoutingControlProps> = ({ positions }) => {
+    console.log('positions', positions);
     const {
         setInstructions,
         setInstructionsVisible,
@@ -62,8 +61,8 @@ const RoutingControl: React.FC<RoutingControlProps> = ({ positions }) => {
                 }).bindPopup(`Waypoint ${i + 1}`);
             },
             router: L.Routing.osrmv1({
-                serviceUrl: 'https://router.project-osrm.org/route/v1/',
-                // serviceUrl: 'https://api.openrouteservice.org/v2/directions/',
+                // serviceUrl: 'https://router.project-osrm.org/route/v1/',
+                serviceUrl: 'http://localhost:5000/route/v1',
                 profile: 'car',
                 language: 'en',
             }),
@@ -72,29 +71,10 @@ const RoutingControl: React.FC<RoutingControlProps> = ({ positions }) => {
                     Authorization: process.env.ORS_KEY,
                 },
             },
-
-            // router: ORS_Router({
-            //     profile: 'driving-car',
-            //     language: 'hu-hu',
-            // }),
-
-            // router: new TestRouter({}),
-
-            // router: new Alma({
-            //     profile: 'driving-car',
-            // }),
-
-            // router: L.Routing.openrouteserviceV2(process.env.ORS_KEY || '', {
-            //     apiKey: process.env.REACT_APP_ORS_API_KEY || '',
-            //     orsOptions: {
-            //         profile: 'driving-car',
-            //     },
-            // }),
         })?.addTo?.(map);
 
         routingControl.on('routesfound', (e: any) => {
             const routes = e.routes;
-            console.log('route MODE:', routes?.[0]?.instructions?.[0]?.mode);
 
             setCoordinates(routes[0]?.coordinates);
 
