@@ -19,6 +19,7 @@ const RoutingControl: React.FC<RoutingControlProps> = ({ positions }) => {
         instructionWaypointsRef,
         mapRef,
         setCoordinates,
+        navigationType,
     } = useMapContext();
 
     const map = useMap();
@@ -62,7 +63,11 @@ const RoutingControl: React.FC<RoutingControlProps> = ({ positions }) => {
             },
             router: L.Routing.osrmv1({
                 // serviceUrl: 'https://router.project-osrm.org/route/v1/',
-                serviceUrl: 'http://localhost:5002/route/v1',
+                serviceUrl: `http://localhost:${
+                    navigationType === 'car'
+                        ? process.env.CAR_NAV_PORT
+                        : process.env.FOOT_NAV_PORT
+                }/route/v1`,
                 profile: 'car',
                 language: 'en',
             }),

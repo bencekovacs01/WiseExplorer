@@ -18,6 +18,7 @@ import usePOIStore from '@/src/store/poiStore';
 import SearchBar from '../SearchBar/SearchBar';
 import Aco from '../Aco/Aco';
 import AcoComponent from '../Aco/Aco2';
+import NavigationSelector from '../NavigationSelector/NavigationSelector';
 
 interface IRouteResponse {
     route: IRoute[];
@@ -180,6 +181,8 @@ const OpenStreetMap = () => {
                     <Selector />
 
                     <SearchBar />
+
+                    <NavigationSelector />
 
                     {/* <Aco /> */}
 

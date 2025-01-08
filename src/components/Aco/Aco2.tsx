@@ -36,30 +36,43 @@ const AcoComponent = () => {
     const [pheromones, setPheromones] = useState<number[][]>([]);
     const [antPaths, setAntPaths] = useState<number[][]>([]);
 
-    const [data, setData] = useState<Coordinate[]>(
-        points?.map
-            ? points.map((poi: POI) => new Coordinate(poi.lat, poi.lng))
-            : [],
-    );
+    const pois = [
+        { latitude: 46.49596, longitude: 24.57086 },
+        { latitude: 46.58635, longitude: 24.56335 },
+        { latitude: 46.55743, longitude: 24.56356 },
+        { latitude: 46.58374, longitude: 24.59542 },
+        { latitude: 46.56094, longitude: 24.58447 },
+        { latitude: 46.57072, longitude: 24.54501 },
+        { latitude: 46.50603, longitude: 24.52888 },
+        { latitude: 46.53003, longitude: 24.59174 },
+        { latitude: 46.5743, longitude: 24.56059 },
+        { latitude: 46.54451, longitude: 24.59205 },
+    ];
+
+    const [data, setData] = useState<Coordinate[]>(pois);
+    // points?.map
+    //     ? points.map((poi: POI) => new Coordinate(poi.lat, poi.lng))
+    //     : [],
 
     useEffect(() => {
-        setData(data);
+        // setData(data);
+        // setData(pois);
     }, [data]);
 
     const aco = useMemo(() => {
-        if (distanceMatrix.length === 0) return null;
+        if (distanceMatrix?.length === 0) return null;
         return new ACO({
             distanceMatrix,
             numAnts: 10,
             alpha: 1,
             beta: 5,
             evaporationRate: 0.5,
-            iterations: 60,
+            iterations: 100,
         });
     }, [distanceMatrix]);
 
     const handleSelect = () => {
-        if (!aco || distanceMatrix.length === 0) return;
+        if (!aco || distanceMatrix?.length === 0) return;
 
         aco.run(
             (
@@ -85,7 +98,7 @@ const AcoComponent = () => {
     };
 
     // useEffect(() => {
-    //     if (!aco || distanceMatrix.length === 0) return;
+    //     if (!aco || distanceMatrix?.length === 0) return;
 
     //     // return;
 
@@ -113,15 +126,16 @@ const AcoComponent = () => {
     // }, [aco, distanceMatrix]);
 
     useEffect(() => {
-        data.forEach((poi) => {
-            L.circleMarker([poi.latitude, poi.longitude], {
-                radius: 6,
-                color: 'red',
-                fillColor: 'red',
-                fillOpacity: 1,
-            }).addTo(map);
-        });
+        // data.forEach((poi) => {
+        //     L.circleMarker([poi.latitude, poi.longitude], {
+        //         radius: 6,
+        //         color: 'red',
+        //         fillColor: 'red',
+        //         fillOpacity: 1,
+        //     }).addTo(map);
+        // });
 
+        // loadDistanceMatrix(data).then((matrix: any) => {
         loadDistanceMatrix(data).then((matrix: any) => {
             console.log('matrix', matrix);
             setDistanceMatrix(matrix);
@@ -230,13 +244,31 @@ const AcoComponent = () => {
                 }),
             }).addTo(map);
         });
-    }, [antPaths, map, data]);
+    }, [antPaths, map, data, navigationType]);
+
+    const asd = () => {
+        // const array= [ ]
+        console.log('asd');
+
+        console.log('pois', pois);
+        data.forEach((poi) => {
+            L.circleMarker([poi.latitude, poi.longitude], {
+                radius: 6,
+                color: 'red',
+                fillColor: 'red',
+                fillOpacity: 1,
+            }).addTo(map);
+        });
+
+        handleSelect();
+    };
 
     return (
         <Button
             variant="contained"
             color="primary"
-            onClick={handleSelect}
+            // onClick={handleSelect}
+            onClick={asd}
             style={{
                 position: 'absolute',
                 top: '80px',

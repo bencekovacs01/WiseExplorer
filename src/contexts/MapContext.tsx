@@ -27,7 +27,7 @@ interface MapContextType {
     setNavigationType: (type: NavigationType) => void;
 }
 
-type NavigationType = 'car' | 'foot';
+export type NavigationType = 'car' | 'foot';
 
 const MapContext = createContext<MapContextType | undefined>(undefined);
 

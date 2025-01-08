@@ -54,7 +54,8 @@ const SearchBar = () => {
                 left: 60,
                 top: 13,
                 zIndex: 1000,
-                width: '400px',
+                width: '100%',
+                maxWidth: '400px',
                 display: 'flex',
                 flexDirection: 'row',
             }}
