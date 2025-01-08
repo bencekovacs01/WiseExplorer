@@ -27,6 +27,8 @@ interface MapContextType {
     setNavigationType: (type: NavigationType) => void;
     evaporationRate: number;
     setEvaporationRate: (rate: number) => void;
+    iterations: number;
+    setIterations: (iterations: number) => void;
 }
 
 export type NavigationType = 'car' | 'foot';
@@ -47,6 +49,7 @@ export const MapProvider: React.FC<{ children: ReactNode }> = ({
     const [navigationType, setNavigationType] = useState<NavigationType>('car');
 
     const [evaporationRate, setEvaporationRate] = useState<number>(0.5);
+    const [iterations, setIterations] = useState<number>(100);
 
     const markersRef = useRef<L.Circle[]>([]);
     const instructionWaypointsRef = useRef<L.LatLng[]>([]);
@@ -82,6 +85,8 @@ export const MapProvider: React.FC<{ children: ReactNode }> = ({
         setNavigationType,
         evaporationRate,
         setEvaporationRate,
+        iterations,
+        setIterations,
     };
 
     return <MapContext.Provider value={value}>{children}</MapContext.Provider>;

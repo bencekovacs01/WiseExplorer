@@ -25,7 +25,8 @@ const AcoComponent = () => {
 
     const [corners, setCorners] = useState<L.LatLng[]>([]);
 
-    const { setPois, navigationType, evaporationRate } = useMapContext();
+    const { setPois, navigationType, evaporationRate, iterations } =
+        useMapContext();
 
     const [loadDistanceMatrix] = usePOIStore(
         useShallow((state) => [state.loadDistanceMatrix]),
@@ -67,9 +68,9 @@ const AcoComponent = () => {
             alpha: 1,
             beta: 5,
             evaporationRate: evaporationRate,
-            iterations: 100,
+            iterations: iterations,
         });
-    }, [distanceMatrix]);
+    }, [distanceMatrix, evaporationRate, iterations]);
 
     const handleSelect = () => {
         if (!aco || distanceMatrix?.length === 0) return;

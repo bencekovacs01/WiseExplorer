@@ -18,10 +18,16 @@ const Parameters = () => {
         setNavigationType,
         evaporationRate,
         setEvaporationRate,
+        iterations,
+        setIterations,
     } = useMapContext();
 
     const handleChange = (event: Event, value: number | number[]) => {
         setEvaporationRate(value as number);
+    };
+
+    const handleIterationsChange = (event: Event, value: number | number[]) => {
+        setIterations(value as number);
     };
 
     return (
@@ -49,6 +55,32 @@ const Parameters = () => {
                     min={0}
                     max={1}
                     step={0.1}
+                />
+            </FormControl>
+
+            <FormControl
+                variant="filled"
+                style={{
+                    position: 'absolute',
+                    top: '140px',
+                    right: '100px',
+                    zIndex: 998,
+                    width: '150px',
+                    height: '50px',
+                    backgroundColor: 'white',
+                }}
+            >
+                <InputLabel id="">Iterations</InputLabel>
+                <Slider
+                    value={iterations}
+                    onChange={handleIterationsChange}
+                    style={{
+                        width: '100%',
+                    }}
+                    aria-labelledby="rate-slider-label"
+                    min={0}
+                    max={100}
+                    step={1}
                 />
             </FormControl>
         </div>
