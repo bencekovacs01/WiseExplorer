@@ -25,6 +25,8 @@ interface MapContextType {
     setCoordinates: (coords: ICoordinate[]) => void;
     navigationType: NavigationType;
     setNavigationType: (type: NavigationType) => void;
+    evaporationRate: number;
+    setEvaporationRate: (rate: number) => void;
 }
 
 export type NavigationType = 'car' | 'foot';
@@ -43,6 +45,8 @@ export const MapProvider: React.FC<{ children: ReactNode }> = ({
     );
     const [coordinates, setCoordinates] = useState<ICoordinate[] | null>(null);
     const [navigationType, setNavigationType] = useState<NavigationType>('car');
+
+    const [evaporationRate, setEvaporationRate] = useState<number>(0.5);
 
     const markersRef = useRef<L.Circle[]>([]);
     const instructionWaypointsRef = useRef<L.LatLng[]>([]);
@@ -76,6 +80,8 @@ export const MapProvider: React.FC<{ children: ReactNode }> = ({
         setCoordinates,
         navigationType,
         setNavigationType,
+        evaporationRate,
+        setEvaporationRate,
     };
 
     return <MapContext.Provider value={value}>{children}</MapContext.Provider>;

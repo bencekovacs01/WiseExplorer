@@ -19,6 +19,7 @@ import SearchBar from '../SearchBar/SearchBar';
 import Aco from '../Aco/Aco';
 import AcoComponent from '../Aco/Aco2';
 import NavigationSelector from '../NavigationSelector/NavigationSelector';
+import Parameters from '../Parameters/Parameters';
 
 interface IRouteResponse {
     route: IRoute[];
@@ -183,6 +184,8 @@ const OpenStreetMap = () => {
                     <SearchBar />
 
                     <NavigationSelector />
+
+                    <Parameters />
 
                     {/* <Aco /> */}
 

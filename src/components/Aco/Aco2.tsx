@@ -25,7 +25,7 @@ const AcoComponent = () => {
 
     const [corners, setCorners] = useState<L.LatLng[]>([]);
 
-    const { setPois, navigationType } = useMapContext();
+    const { setPois, navigationType, evaporationRate } = useMapContext();
 
     const [loadDistanceMatrix] = usePOIStore(
         useShallow((state) => [state.loadDistanceMatrix]),
@@ -66,7 +66,7 @@ const AcoComponent = () => {
             numAnts: 10,
             alpha: 1,
             beta: 5,
-            evaporationRate: 0.5,
+            evaporationRate: evaporationRate,
             iterations: 100,
         });
     }, [distanceMatrix]);
