@@ -75,9 +75,9 @@ const OpenStreetMap = () => {
         return false;
     }, [currentPosition, mapRef]);
 
-    // useEffect(() => {
-    //     fetchCategories();
-    // }, [fetchCategories]);
+    useEffect(() => {
+        fetchCategories();
+    }, [fetchCategories]);
 
     // useEffect(() => {
     //     findRouteGreedy(greedyPois).then((response) => {

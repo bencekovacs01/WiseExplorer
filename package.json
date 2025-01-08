@@ -17,6 +17,7 @@
         "@next/env": "^15.0.3",
         "axios": "^1.7.7",
         "dotenv": "^16.4.5",
+        "explore-wise": "file:",
         "express": "^4.21.1",
         "leaflet": "^1.9.4",
         "leaflet-routing-machine": "^3.2.12",

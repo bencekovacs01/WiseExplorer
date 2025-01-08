@@ -2,7 +2,7 @@ import { useMap, useMapEvents } from 'react-leaflet';
 import L, { LatLngLiteral } from 'leaflet';
 import ReactDOMServer from 'react-dom/server';
 import { Button } from '@mui/material';
-import { SelectAll, Deselect, PushPin } from '@mui/icons-material';
+import { SelectAll, Deselect, Route } from '@mui/icons-material';
 import { use, useEffect, useMemo, useState } from 'react';
 import { useShallow } from 'zustand/shallow';
 import usePOIStore from '@/src/store/poiStore';
@@ -23,7 +23,6 @@ interface POI {
 const AcoComponent = () => {
     const map = useMap();
 
-    const [isSelecting, setIsSelecting] = useState<boolean>(false);
     const [corners, setCorners] = useState<L.LatLng[]>([]);
 
     const { setPois, navigationType } = useMapContext();
@@ -250,7 +249,7 @@ const AcoComponent = () => {
                 minWidth: 0,
             }}
         >
-            {isSelecting ? <SelectAll /> : <Deselect />}
+            <Route />
         </Button>
     );
 };
