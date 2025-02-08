@@ -21,6 +21,7 @@ export default async function handler(
             });
         }
 
+        // const poiService: POIService = new POIService();
         const poiService: POIService = new POIService();
         const standardPois = await poiService.getPOIsStandard(
             start,
@@ -28,8 +29,6 @@ export default async function handler(
             buffer,
         );
         res.json(JSON.parse(standardPois));
-
-        // res.json({ message: 'Success' });
     } catch (error: any) {
         res.status(500).json({ message: error.message });
     }

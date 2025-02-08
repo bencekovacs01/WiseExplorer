@@ -1,14 +1,11 @@
-import axios from 'axios';
 import Coordinate from '../models/Coordinate';
 import Route from '../models/Route';
-import { axiosORS } from '../utils/axios';
 import { orsApi } from '../utils/apiWrapper';
 
 /**
  * GreedyService provides methods to find the minimum distance route among a set of points using greedy method.
  */
 class GreedyService {
-    private client = axiosORS;
     private orsApi = orsApi;
     private ORS_KEY = process.env.ORS_KEY as string;
 

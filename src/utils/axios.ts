@@ -24,6 +24,7 @@ const createAxiosInstance = (baseURL: string, apiKey?: string | undefined) => {
                 };
 
                 config.headers['Content-Type'] = 'application/json';
+                config.headers['Authorization'] = apiKey;
             }
             return config;
         },
@@ -43,6 +44,8 @@ const createAxiosInstance = (baseURL: string, apiKey?: string | undefined) => {
 const ORS_KEY = process.env.ORS_KEY;
 const axiosORS = createAxiosInstance(
     'https://api.openrouteservice.org/v2',
+    // 'http://localhost:8080/v2',
+
     ORS_KEY,
 );
 const axiosEW = createAxiosInstance('/api/pois', undefined);

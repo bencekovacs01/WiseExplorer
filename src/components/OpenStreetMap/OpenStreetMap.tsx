@@ -13,6 +13,12 @@ import { Button } from '@mui/material';
 import { GpsFixed, GpsNotFixed, GpsOff } from '@mui/icons-material';
 import Loader from '../Loader/Loader';
 import Selector from '../Selector/Selector';
+import { useShallow } from 'zustand/shallow';
+import usePOIStore from '@/src/store/poiStore';
+import SearchBar from '../SearchBar/SearchBar';
+import AcoComponent from '../Aco/Aco';
+import NavigationSelector from '../NavigationSelector/NavigationSelector';
+import Parameters from '../Parameters/Parameters';
 
 interface IRouteResponse {
     route: IRoute[];
@@ -29,30 +35,15 @@ const OpenStreetMap = () => {
     const [loading, setLoading] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
 
+    const [findRouteGreedy, fetchCategories] = usePOIStore(
+        useShallow((state) => [state.findRouteGreedy, state.fetchCategories]),
+    );
+
     const [positions, setPositions] = useState<IPosition[]>([]);
-    console.log('positions', positions);
     const [currentPositionVisible, setcurrentPositionVisible] =
         useState<boolean>(false);
 
     const { currentPosition, mapRef, pois } = useMapContext();
-    console.log('pois', pois);
-
-    const fetchDataGreedy = async () => {
-        setLoading(true);
-        try {
-            const response = await fetch('/api/pois/find-route-greedy', {
-                method: 'POST',
-                body: JSON.stringify(greedyPois),
-            }).then((res) => res?.json?.());
-
-            const result = await response;
-            setRouteResponse(result?.[0]);
-        } catch (error) {
-            setError(error instanceof Error ? error.message : 'Unknown error');
-        } finally {
-            setLoading(false);
-        }
-    };
 
     const flyToCurrentPosition = () => {
         if (currentPosition) {
@@ -86,8 +77,15 @@ const OpenStreetMap = () => {
     }, [currentPosition, mapRef]);
 
     useEffect(() => {
-        fetchDataGreedy();
-    }, []);
+        fetchCategories();
+    }, [fetchCategories]);
+
+    // useEffect(() => {
+    //     findRouteGreedy(greedyPois).then((response) => {
+    //         console.log('response', response);
+    //         setRouteResponse(response?.[0]);
+    //     });
+    // }, [findRouteGreedy]);
 
     useEffect(() => {
         const map = mapRef?.current?.[0];
@@ -128,62 +126,72 @@ const OpenStreetMap = () => {
     };
 
     return (
-        <div
-            style={{
-                height: '100%',
-                width: '100%',
-                overflow: 'hidden',
-                borderWidth: 1,
-                borderColor: 'black',
-            }}
-        >
-            <MapContainer
+        <>
+            <div
                 style={{
-                    height: '85%',
+                    height: '100%',
                     width: '100%',
+                    overflow: 'hidden',
+                    borderWidth: 1,
                     borderColor: 'black',
                 }}
-                center={[46.5417, 24.5617]}
-                zoom={13}
-                scrollWheelZoom={true}
             >
-                <TileLayer
-                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                />
-
-                {positions?.length > 1 && (
-                    <RoutingControl positions={positions} />
-                )}
-
-                {pois?.length > 1 && <RoutingControl positions={pois} />}
-
-                <PositionTracker />
-
-                <Button
-                    variant="contained"
-                    color="primary"
-                    onClick={flyToCurrentPosition}
+                <MapContainer
                     style={{
-                        position: 'absolute',
-                        bottom: '40px',
-                        right: '20px',
-                        zIndex: 1000,
-                        height: '50px',
-                        width: '50px',
-                        borderRadius: '50%',
-                        padding: 0,
-                        minWidth: 0,
+                        height: '85%',
+                        width: '100%',
+                        borderColor: 'black',
                     }}
+                    center={[46.5417, 24.5617]}
+                    zoom={13}
+                    scrollWheelZoom={true}
                 >
-                    {renderGpsIcon()}
-                </Button>
+                    <TileLayer
+                        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    />
 
-                <Selector />
-            </MapContainer>
+                    {positions?.length > 1 && (
+                        <RoutingControl positions={positions} />
+                    )}
 
-            {loading && <Loader loading />}
-        </div>
+                    {pois?.length > 1 && <RoutingControl positions={pois} />}
+
+                    <PositionTracker />
+
+                    <Button
+                        variant="contained"
+                        color="primary"
+                        onClick={flyToCurrentPosition}
+                        style={{
+                            position: 'absolute',
+                            bottom: '40px',
+                            right: '20px',
+                            zIndex: 1000,
+                            height: '50px',
+                            width: '50px',
+                            borderRadius: '50%',
+                            padding: 0,
+                            minWidth: 0,
+                        }}
+                    >
+                        {renderGpsIcon()}
+                    </Button>
+
+                    <Selector />
+
+                    <SearchBar />
+
+                    <NavigationSelector />
+
+                    {/* <Parameters /> */}
+
+                    <AcoComponent />
+                </MapContainer>
+
+                {loading && <Loader loading />}
+            </div>
+        </>
     );
 };
 

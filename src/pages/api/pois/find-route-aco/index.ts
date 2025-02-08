@@ -1,7 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import Coordinate from '@/src/models/Coordinate';
 import GreedyService from '@/src/services/GreedyService';
-import { BacktrackingService } from '@/src/services/BacktrackingService';
 
 export default async function handler(
     req: NextApiRequest,

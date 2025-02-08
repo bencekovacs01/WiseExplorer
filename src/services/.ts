@@ -7,10 +7,8 @@ import Coordinate from '../models/Coordinate';
 export class POIService {
     private client: AxiosInstance = axios.create();
     private ORS_KEY: string = process.env.ORS_KEY as string;
-    private openRouteServiceBaseUrl: string =
-        'https://api.openrouteservice.org/pois';
-    private seachBaseUrl: string =
-        'https://api.openrouteservice.org/geocode/search';
+    private openRouteServiceBaseUrl: string = 'http://localhost:8080/pois';
+    // 'https://api.openrouteservice.org/pois';
 
     /**
      * Creates an instance of POIService.
@@ -88,27 +86,6 @@ export class POIService {
                 },
             },
         );
-
-        if (response.status === 200) {
-            return response.data;
-        } else {
-            throw new Error(`Error getting POI categories: ${response.status}`);
-        }
-    }
-
-    /**
-     * Searches for POIs based on a text query.
-     * @returns TODO.
-     */
-    public async search(text: string): Promise<any> {
-        const response = await this.client
-            .get(
-                `${this.seachBaseUrl}?api_key=${this.ORS_KEY}&text=${text}&boundary.country=RO`,
-            )
-            .catch((error) => {
-                console.error('POI_error:', error);
-                throw new Error(`POI_error: ${error}`);
-            });
 
         if (response.status === 200) {
             return response.data;

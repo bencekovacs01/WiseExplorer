@@ -16,4 +16,7 @@ export const greedyPois = [
 export const PoiUrl = {
     findRouteGreedy: '/find-route-greedy',
     pois: '/poi-standard',
+    categories: '/poi-categories',
+    search: 'search',
+    loadDistanceMatrix: '/matrix/driving-car',
 };
