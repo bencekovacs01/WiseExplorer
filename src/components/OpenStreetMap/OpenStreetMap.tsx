@@ -16,8 +16,7 @@ import Selector from '../Selector/Selector';
 import { useShallow } from 'zustand/shallow';
 import usePOIStore from '@/src/store/poiStore';
 import SearchBar from '../SearchBar/SearchBar';
-import Aco from '../Aco/Aco';
-import AcoComponent from '../Aco/Aco2';
+import AcoComponent from '../Aco/Aco';
 import NavigationSelector from '../NavigationSelector/NavigationSelector';
 import Parameters from '../Parameters/Parameters';
 
@@ -185,9 +184,7 @@ const OpenStreetMap = () => {
 
                     <NavigationSelector />
 
-                    <Parameters />
-
-                    {/* <Aco /> */}
+                    {/* <Parameters /> */}
 
                     <AcoComponent />
                 </MapContainer>
