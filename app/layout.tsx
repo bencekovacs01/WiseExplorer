@@ -1,26 +1,16 @@
-import type { Metadata } from "next";
-import { Inter } from "next/font/google";
-import dotenv from 'dotenv';
+'use client';
+
+import { ReactNode } from 'react';
 
 import './globals.css';
 
-const inter = Inter({ subsets: ['latin'] });
-
-dotenv.config();
-
-export const metadata: Metadata = {
-    title: 'ExploreWise',
-    description: 'Explore the area!',
+type Props = {
+    children: ReactNode;
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
-  return (
-    <html lang="en">
-      <body className={inter.className}>{children}</body>
-    </html>
-  );
+// Even though this component is just passing its children through, the presence
+// of this file fixes an issue in Next.js 13.4 where link clicks that switch
+// the locale would otherwise cause a full reload.
+export default function RootLayout({ children }: Props) {
+    return children;
 }

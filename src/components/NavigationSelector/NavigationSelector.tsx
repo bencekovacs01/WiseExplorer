@@ -6,14 +6,10 @@ import {
     InputLabel,
     SelectChangeEvent,
 } from '@mui/material';
-import { useMap } from 'react-leaflet';
 import { NavigationType, useMapContext } from '@/src/contexts/MapContext';
 
 const NavigationSelector = () => {
-    const map = useMap();
-
     const { navigationType, setNavigationType } = useMapContext();
-    console.log('navigationType', navigationType);
 
     const handleChange = (event: SelectChangeEvent<string>) => {
         setNavigationType(event?.target?.value as NavigationType);
@@ -24,12 +20,13 @@ const NavigationSelector = () => {
             variant="filled"
             style={{
                 position: 'absolute',
-                top: '20px',
-                right: '100px',
+                bottom: '20px',
+                left: '10px',
                 zIndex: 998,
                 width: '150px',
                 backgroundColor: 'white',
             }}
+            aria-orientation="vertical"
         >
             <InputLabel id="navigation-selector-label">
                 Navigation mode
@@ -39,6 +36,7 @@ const NavigationSelector = () => {
                 value={navigationType}
                 onChange={handleChange}
                 label="Navigation mode"
+                disableUnderline
             >
                 <MenuItem value="car">Car</MenuItem>
                 <MenuItem value="foot">Foot</MenuItem>
