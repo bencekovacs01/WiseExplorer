@@ -28,8 +28,6 @@ export default async function handler(
             start,
             end,
             buffer,
-            categoryIds,
-            categoryGroupIds,
         );
         res.json(JSON.parse(standardPois));
     } catch (error: any) {

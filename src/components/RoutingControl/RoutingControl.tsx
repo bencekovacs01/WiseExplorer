@@ -56,7 +56,7 @@ const RoutingControl: React.FC<RoutingControlProps> = ({ positions }) => {
             fitSelectedRoutes: true,
             showAlternatives: false,
             show: false,
-            createMarker: function (i, waypoint) {
+            createMarker: function (i: number, waypoint: any) {
                 return L.marker(waypoint.latLng, {
                     icon: customMarker,
                 }).bindPopup(`Waypoint ${i + 1}`);
@@ -76,7 +76,7 @@ const RoutingControl: React.FC<RoutingControlProps> = ({ positions }) => {
                     Authorization: process.env.ORS_KEY,
                 },
             },
-        })?.addTo?.(map);
+        } as any)?.addTo?.(map);
 
         routingControl.on('routesfound', (e: any) => {
             const routes = e.routes;
