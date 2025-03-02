@@ -27,7 +27,7 @@ const InstructionsPanel: React.FC = () => {
 
     const handleNextInstruction = () => {
         setCurrentInstructionIndex((prevIndex) => {
-            if (prevIndex < instructionSet.length - 1) {
+            if (prevIndex < instructionSet?.length - 1) {
                 handleInstructionClicked(currentInstructionIndex + 1);
 
                 return prevIndex + 1;
@@ -61,7 +61,7 @@ const InstructionsPanel: React.FC = () => {
 
     const array = (instructionWaypointsRef.current || []).map((latlng) => ({
         coords: { lat: latlng.lat, lng: latlng.lng },
-        text: undefined,
+        text: 'Finished',
     }));
 
     useEffect(() => {
