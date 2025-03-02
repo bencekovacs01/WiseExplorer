@@ -1,4 +1,4 @@
-import { Marker, Popup } from 'react-leaflet';
+import { Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { useMapContext } from '@/src/contexts/MapContext';
 import usePositionTracker from '@/src/hooks/usePositionTracker';
@@ -6,10 +6,18 @@ import { PersonPin } from '@mui/icons-material';
 import ReactDOMServer from 'react-dom/server';
 import { Button } from '@mui/material';
 import { Pause, PlayArrow } from '@mui/icons-material';
+import { useEffect } from 'react';
 
 const PositionTracker = () => {
-    const { currentPosition } = useMapContext();
+    const { currentPosition, mapRef } = useMapContext();
     const { togglePause, isPaused } = usePositionTracker();
+
+    const map = useMap();
+
+    useEffect(() => {
+        if (map && mapRef)
+            mapRef?.current?.splice?.(0, mapRef?.current.length, map);
+    }, [map, mapRef]);
 
     return (
         <>
