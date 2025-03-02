@@ -81,7 +81,8 @@ const InstructionsPanel: React.FC = () => {
         };
 
         checkAndUpdateInstruction();
-    }, [currentPosition]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [currentPosition, currentInstructionIndex]);
 
     return (
         <>

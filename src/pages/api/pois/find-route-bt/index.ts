@@ -21,13 +21,15 @@ export default async function handler(
             });
         }
 
-        const backtrackingService = new BacktrackingService();
-        const route = await backtrackingService.findMinimumDistanceRouteBt(
-            start,
-            end,
-            buffer,
-        );
-        res.json(route);
+        res.json({});
+
+        // const backtrackingService = new BacktrackingService();
+        // const route = await backtrackingService.findMinimumDistanceRouteBt(
+        //     start,
+        //     end,
+        //     buffer,
+        // );
+        // res.json(route);
     } catch (error: any) {
         res.status(500).json({ message: error.message });
     }

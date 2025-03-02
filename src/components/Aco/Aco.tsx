@@ -189,7 +189,7 @@ const AcoComponent = () => {
                     }/route/v1`,
                     language: 'en',
                 }),
-            }).addTo(map);
+            } as any).addTo(map);
         });
     }, [antPaths, map, data, navigationType]);
 

@@ -11,8 +11,8 @@ const CommonIntlProvider = ({ children, locale, defaultMessages }: any) => {
   const [messages, setMessages] = useState(defaultMessages);
 
   const addMessages = useCallback((newMessages: any) => {
-    setMessages((messages: any) => deepmerge(messages, newMessages));
-  }, [messages]);
+      setMessages((messages: any) => deepmerge(messages, newMessages));
+  }, []);
 
   const commonIntlValue = React.useMemo(
     () => ({
