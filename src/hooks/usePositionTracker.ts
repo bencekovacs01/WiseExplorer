@@ -7,14 +7,9 @@ const usePositionTracker = () => {
 
     const map = useMapEvents({
         locationfound(e) {
-            // setTimeout(() => {
-            //     map.locate();
-            // }, 3000);
-
             setCurrentPosition({
                 coords: e.latlng,
             });
-            console.log('e.latlng', e.latlng);
 
             map.flyTo(e.latlng, map.getZoom(), {
                 animate: true,
@@ -49,7 +44,13 @@ const usePositionTracker = () => {
                     animate: true,
                     duration: 0.5,
                 });
-                setIndex((prevIndex) => (prevIndex + 1) % coordinates.length);
+                if (index === coordinates.length - 1) {
+                    setIsPaused(true);
+                } else {
+                    setIndex(
+                        (prevIndex) => (prevIndex + 1) % coordinates.length,
+                    );
+                }
             }
         }, 200);
 
@@ -57,31 +58,6 @@ const usePositionTracker = () => {
     }, [coordinates, setCurrentPosition, map, isPaused, index]);
 
     return { togglePause, isPaused };
-
-    //     const success = (pos: GeolocationPosition) => {
-    //         setCurrentPosition({
-    //             coords: { lat: pos.coords.latitude, lng: pos.coords.longitude },
-    //         });
-    //     };
-
-    //     const error = (err: any) => {
-    //         console.warn(`ERROR(${err.code}): ${err.message}`);
-    //     };
-
-    //     if (navigator.geolocation) {
-    //         const watchId = navigator.geolocation.watchPosition(
-    //             success,
-    //             error,
-    //             {
-    //                 enableHighAccuracy: true,
-    //             },
-    //         );
-
-    //         return () => {
-    //             navigator.geolocation.clearWatch(watchId);
-    //         };
-    //     }
-    // }, [setCurrentPosition]);
 };
 
 export default usePositionTracker;
