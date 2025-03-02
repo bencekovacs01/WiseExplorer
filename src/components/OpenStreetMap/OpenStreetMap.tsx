@@ -1,5 +1,7 @@
+'use client';
+
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import { greedyPois } from '@/src/constants/constants';
 import 'leaflet/dist/leaflet.css';
@@ -18,7 +20,7 @@ import usePOIStore from '@/src/store/poiStore';
 import SearchBar from '../SearchBar/SearchBar';
 import AcoComponent from '../Aco/Aco';
 import NavigationSelector from '../NavigationSelector/NavigationSelector';
-import Parameters from '../Parameters/Parameters';
+import CategorySelector from '../CategorySelector/CategorySelector';
 
 interface IRouteResponse {
     route: IRoute[];
@@ -35,8 +37,8 @@ const OpenStreetMap = () => {
     const [loading, setLoading] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
 
-    const [findRouteGreedy, fetchCategories] = usePOIStore(
-        useShallow((state) => [state.findRouteGreedy, state.fetchCategories]),
+    const [findRouteGreedy, categories] = usePOIStore(
+        useShallow((state) => [state.findRouteGreedy, state.categories]),
     );
 
     const [positions, setPositions] = useState<IPosition[]>([]);
@@ -44,6 +46,8 @@ const OpenStreetMap = () => {
         useState<boolean>(false);
 
     const { currentPosition, mapRef, pois } = useMapContext();
+
+    const mapContainerRef = useRef<L.Map[] | null>([]);
 
     const flyToCurrentPosition = () => {
         if (currentPosition) {
@@ -76,13 +80,8 @@ const OpenStreetMap = () => {
         return false;
     }, [currentPosition, mapRef]);
 
-    useEffect(() => {
-        fetchCategories();
-    }, [fetchCategories]);
-
     // useEffect(() => {
     //     findRouteGreedy(greedyPois).then((response) => {
-    //         console.log('response', response);
     //         setRouteResponse(response?.[0]);
     //     });
     // }, [findRouteGreedy]);
@@ -137,6 +136,7 @@ const OpenStreetMap = () => {
                 }}
             >
                 <MapContainer
+                    ref={mapContainerRef as any}
                     style={{
                         height: '85%',
                         width: '100%',
@@ -156,6 +156,15 @@ const OpenStreetMap = () => {
                     )}
 
                     {pois?.length > 1 && <RoutingControl positions={pois} />}
+
+                    <Selector />
+
+                    <SearchBar />
+
+                    <NavigationSelector />
+                    {/* <Parameters /> */}
+
+                    <AcoComponent />
 
                     <PositionTracker />
 
@@ -177,17 +186,9 @@ const OpenStreetMap = () => {
                     >
                         {renderGpsIcon()}
                     </Button>
-
-                    <Selector />
-
-                    <SearchBar />
-
-                    <NavigationSelector />
-
-                    {/* <Parameters /> */}
-
-                    <AcoComponent />
                 </MapContainer>
+
+                <CategorySelector />
 
                 {loading && <Loader loading />}
             </div>

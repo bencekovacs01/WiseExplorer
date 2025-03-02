@@ -10,7 +10,7 @@ import { ICoordinate, IMainInstruction, IPosition } from '../models/models';
 
 interface MapContextType {
     pois: IPosition[];
-    setPois: (pois: IPosition[]) => void;
+    setPois: (pois: IPosition[] | ((prev: IPosition[]) => IPosition[])) => void;
     instructions: IMainInstruction[];
     setInstructions: (instructions: IMainInstruction[]) => void;
     instructionsVisible: boolean;
@@ -29,6 +29,22 @@ interface MapContextType {
     setEvaporationRate: (rate: number) => void;
     iterations: number;
     setIterations: (iterations: number) => void;
+    selectedCategoryGroups: SelectedCategories;
+    setSelectedCategoryGroups: (
+        categories:
+            | SelectedCategories
+            | ((prev: SelectedCategories) => SelectedCategories),
+    ) => void;
+    selectedCategories: SelectedCategories;
+    setSelectedCategories: (
+        categories:
+            | SelectedCategories
+            | ((prev: SelectedCategories) => SelectedCategories),
+    ) => void;
+}
+
+interface SelectedCategories {
+    [id: string]: boolean;
 }
 
 export type NavigationType = 'car' | 'foot';
@@ -54,6 +70,11 @@ export const MapProvider: React.FC<{ children: ReactNode }> = ({
     const markersRef = useRef<L.Circle[]>([]);
     const instructionWaypointsRef = useRef<L.LatLng[]>([]);
     const mapRef = useRef<L.Map[] | null>([]);
+
+    const [selectedCategoryGroups, setSelectedCategoryGroups] =
+        useState<SelectedCategories>({});
+    const [selectedCategories, setSelectedCategories] =
+        useState<SelectedCategories>({});
 
     const handleInstructionClicked = (index: number) => {
         if (instructionWaypointsRef.current && mapRef.current) {
@@ -87,6 +108,10 @@ export const MapProvider: React.FC<{ children: ReactNode }> = ({
         setEvaporationRate,
         iterations,
         setIterations,
+        selectedCategoryGroups,
+        setSelectedCategoryGroups,
+        selectedCategories,
+        setSelectedCategories,
     };
 
     return <MapContext.Provider value={value}>{children}</MapContext.Provider>;

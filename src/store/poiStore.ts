@@ -1,8 +1,10 @@
 import { createWithEqualityFn } from 'zustand/traditional';
 import { orsApi, ewApi } from '@/src/utils/apiWrapper';
 import Coordinate from '@/src/models/Coordinate';
-import { greedyPois, PoiUrl } from '../constants/constants';
+import { PoiUrl } from '../constants/constants';
 import { PoiRequestBody } from '../models/PoiRequestBody';
+
+import categories from '../components/CategorySelector/categories.json';
 
 interface POIState {
     categories: Record<string, any>;
@@ -16,7 +18,7 @@ interface POIState {
 }
 
 const usePOIStore = createWithEqualityFn<POIState>((set) => ({
-    categories: {},
+    categories: categories,
     loading: false,
     error: null,
     findRouteGreedy: async (pois: Coordinate[]) => findRouteGreedy(pois, set),
@@ -116,7 +118,6 @@ const loadDistanceMatrix = async (
             PoiUrl.loadDistanceMatrix,
             jsonContent,
         );
-        console.log('response', response);
 
         set({ loading: false });
         return response?.distances;

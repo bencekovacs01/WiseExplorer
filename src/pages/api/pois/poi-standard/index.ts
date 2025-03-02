@@ -14,6 +14,8 @@ export default async function handler(
         const start: Coordinate = req.body?.start;
         const end: Coordinate = req.body?.end;
         const buffer: number = req.body?.buffer;
+        const categoryIds: number[] = req.body?.categoryIds;
+        const categoryGroupIds: number[] = req.body?.categoryGroupIds;
 
         if (!start || !end) {
             return res.status(400).json({
@@ -21,12 +23,13 @@ export default async function handler(
             });
         }
 
-        // const poiService: POIService = new POIService();
         const poiService: POIService = new POIService();
         const standardPois = await poiService.getPOIsStandard(
             start,
             end,
             buffer,
+            categoryIds,
+            categoryGroupIds,
         );
         res.json(JSON.parse(standardPois));
     } catch (error: any) {

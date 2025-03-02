@@ -1,7 +1,28 @@
 import Coordinate from './Coordinate';
 
-class Route {
-    constructor(public route: Coordinate[], public totalDistance: number) {}
-}
+export default class Route {
+    points: Coordinate[];
+    totalDistance: number;
+    duration?: number;
+    visitTime?: number;
+    totalTime?: number;
+    clusterInfo?: Array<{
+        category?: string | null;
+        subCategory?: string | null;
+        clusteredIds: number[];
+    }>;
 
-export default Route;
+    constructor(
+        points: Coordinate[],
+        totalDistance: number,
+        duration?: number,
+        visitTime?: number,
+        totalTime?: number,
+    ) {
+        this.points = points;
+        this.totalDistance = totalDistance;
+        this.duration = duration;
+        this.visitTime = visitTime;
+        this.totalTime = totalTime;
+    }
+}
