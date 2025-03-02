@@ -104,7 +104,6 @@ const AcoComponent = () => {
 
         // loadDistanceMatrix(data).then((matrix: any) => {
         loadDistanceMatrix(data).then((matrix: any) => {
-            console.log('matrix', matrix);
             setDistanceMatrix(matrix);
         });
     }, [map, data, loadDistanceMatrix]);
@@ -214,8 +213,8 @@ const AcoComponent = () => {
             onClick={handleOnClick}
             style={{
                 position: 'absolute',
-                top: '80px',
-                right: '20px',
+                top: '130px',
+                right: '10px',
                 zIndex: 998,
                 height: '50px',
                 width: '50px',
