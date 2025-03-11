@@ -51,7 +51,7 @@ const PositionTracker = () => {
                 style={{
                     position: 'absolute',
                     bottom: '100px',
-                    right: '20px',
+                    right: '10px',
                     zIndex: 1000,
                     height: '50px',
                     width: '50px',

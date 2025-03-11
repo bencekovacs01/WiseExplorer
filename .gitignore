@@ -102,3 +102,6 @@ $RECYCLE.BIN/
 
 server.cert
 server.key
+
+android/
+ios/

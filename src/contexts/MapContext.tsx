@@ -41,6 +41,8 @@ interface MapContextType {
             | SelectedCategories
             | ((prev: SelectedCategories) => SelectedCategories),
     ) => void;
+    mainContentStyle: React.CSSProperties;
+    setMainContentStyle: (style: React.CSSProperties) => void;
 }
 
 interface SelectedCategories {
@@ -49,8 +51,66 @@ interface SelectedCategories {
 
 export type NavigationType = 'car' | 'foot';
 
-const MapContext = createContext<MapContextType | undefined>(undefined);
-
+export const MapContext = createContext<MapContextType>({
+    mainContentStyle: { height: '100%' },
+    setMainContentStyle: () => {},
+    pois: [],
+    setPois: function (
+        pois: IPosition[] | ((prev: IPosition[]) => IPosition[]),
+    ): void {
+        throw new Error('Function not implemented.');
+    },
+    instructions: [],
+    setInstructions: function (instructions: IMainInstruction[]): void {
+        throw new Error('Function not implemented.');
+    },
+    instructionsVisible: false,
+    setInstructionsVisible: function (visible: boolean): void {
+        throw new Error('Function not implemented.');
+    },
+    markersRef: React.createRef<L.Circle[]>(),
+    instructionWaypointsRef: React.createRef<L.LatLng[]>(),
+    mapRef: React.createRef<L.Map[] | null>(),
+    handleInstructionClicked: function (index: number): void {
+        throw new Error('Function not implemented.');
+    },
+    currentPosition: null,
+    setCurrentPosition: function (position: IPosition | null): void {
+        throw new Error('Function not implemented.');
+    },
+    coordinates: null,
+    setCoordinates: function (coords: ICoordinate[]): void {
+        throw new Error('Function not implemented.');
+    },
+    navigationType: 'car',
+    setNavigationType: function (type: NavigationType): void {
+        throw new Error('Function not implemented.');
+    },
+    evaporationRate: 0,
+    setEvaporationRate: function (rate: number): void {
+        throw new Error('Function not implemented.');
+    },
+    iterations: 0,
+    setIterations: function (iterations: number): void {
+        throw new Error('Function not implemented.');
+    },
+    selectedCategoryGroups: {},
+    setSelectedCategoryGroups: function (
+        categories:
+            | SelectedCategories
+            | ((prev: SelectedCategories) => SelectedCategories),
+    ): void {
+        throw new Error('Function not implemented.');
+    },
+    selectedCategories: {},
+    setSelectedCategories: function (
+        categories:
+            | SelectedCategories
+            | ((prev: SelectedCategories) => SelectedCategories),
+    ): void {
+        throw new Error('Function not implemented.');
+    },
+});
 export const MapProvider: React.FC<{ children: ReactNode }> = ({
     children,
 }) => {
@@ -71,6 +131,9 @@ export const MapProvider: React.FC<{ children: ReactNode }> = ({
     const instructionWaypointsRef = useRef<L.LatLng[]>([]);
     const mapRef = useRef<L.Map[] | null>([]);
 
+    const [mainContentStyle, setMainContentStyle] =
+        useState<React.CSSProperties>({ height: '100%' });
+
     const [selectedCategoryGroups, setSelectedCategoryGroups] =
         useState<SelectedCategories>({});
     const [selectedCategories, setSelectedCategories] =
@@ -79,9 +142,9 @@ export const MapProvider: React.FC<{ children: ReactNode }> = ({
     const handleInstructionClicked = (index: number) => {
         if (instructionWaypointsRef.current && mapRef.current) {
             const waypoint = instructionWaypointsRef.current[index];
-            markersRef.current.forEach((marker) =>
-                marker.setStyle({ opacity: 0 }),
-            );
+            markersRef.current.forEach((marker) => {
+                marker.setStyle({ opacity: 0 });
+            });
             markersRef.current[index].setStyle({ opacity: 1 });
             mapRef.current?.[0]?.setView(waypoint, 17);
         }
@@ -112,6 +175,8 @@ export const MapProvider: React.FC<{ children: ReactNode }> = ({
         setSelectedCategoryGroups,
         selectedCategories,
         setSelectedCategories,
+        mainContentStyle,
+        setMainContentStyle,
     };
 
     return <MapContext.Provider value={value}>{children}</MapContext.Provider>;

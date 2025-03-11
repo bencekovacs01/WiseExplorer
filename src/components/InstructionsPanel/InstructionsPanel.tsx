@@ -8,7 +8,10 @@ import {
     IconButton,
     SwipeableDrawer,
 } from '@mui/material';
-import { SkipNext, SkipPrevious } from '@mui/icons-material';
+import {
+    SkipNext,
+    SkipPrevious,
+} from '@mui/icons-material';
 import { IPosition } from '@/src/models/models';
 
 const InstructionsPanel: React.FC = () => {
@@ -19,17 +22,34 @@ const InstructionsPanel: React.FC = () => {
         handleInstructionClicked,
         currentPosition,
         instructionWaypointsRef,
+        setMainContentStyle,
     } = useMapContext();
 
-    const instructionSet = instructions?.[0]?.instructions;
+    const panelHeight = '80px';
 
+    useEffect(() => {
+        if (setMainContentStyle) {
+            if (instructionsVisible) {
+                setMainContentStyle({
+                    height: `calc(100% - ${panelHeight})`,
+                    transition: 'height 0.2s ease-out',
+                });
+            } else {
+                setMainContentStyle({
+                    height: '100%',
+                    transition: 'height 0.2s ease-out',
+                });
+            }
+        }
+    }, [instructionsVisible, setMainContentStyle]);
+
+    const instructionSet = instructions?.[0]?.instructions;
     const [currentInstructionIndex, setCurrentInstructionIndex] = useState(0);
 
     const handleNextInstruction = () => {
         setCurrentInstructionIndex((prevIndex) => {
             if (prevIndex < instructionSet?.length - 1) {
                 handleInstructionClicked(currentInstructionIndex + 1);
-
                 return prevIndex + 1;
             }
             return prevIndex;
@@ -40,7 +60,6 @@ const InstructionsPanel: React.FC = () => {
         setCurrentInstructionIndex((prevIndex) => {
             if (prevIndex > 0) {
                 handleInstructionClicked(currentInstructionIndex - 1);
-
                 return prevIndex - 1;
             }
             return prevIndex;
@@ -52,7 +71,6 @@ const InstructionsPanel: React.FC = () => {
         pos2: IPosition | null,
     ): number => {
         if (!pos1 || !pos2) return 0;
-
         return Math.sqrt(
             Math.pow(pos1.coords.lat - pos2.coords.lat, 2) +
                 Math.pow(pos1.coords.lng - pos2.coords.lng, 2),
@@ -67,14 +85,10 @@ const InstructionsPanel: React.FC = () => {
     useEffect(() => {
         const checkAndUpdateInstruction = (): void => {
             if (!array.length || !instructionSet) return;
-
             const top = array?.[currentInstructionIndex];
-
             if (!top) return;
-
             const distance = getDistance(currentPosition, top) * 100;
             const threshold = 0.01;
-
             if (distance < threshold) {
                 setCurrentInstructionIndex((prevIndex) => prevIndex + 1);
             }
@@ -82,7 +96,7 @@ const InstructionsPanel: React.FC = () => {
 
         checkAndUpdateInstruction();
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [currentPosition, currentInstructionIndex]);
+    }, [currentPosition]);
 
     return (
         <>
@@ -96,18 +110,48 @@ const InstructionsPanel: React.FC = () => {
                     keepMounted: true,
                 }}
                 sx={{
-                    height: '0',
-
                     '& .MuiDrawer-paper': {
-                        height: '15%',
+                        height: panelHeight,
+                        position: 'relative',
+                        bottom: 0,
+                        zIndex: 1000,
                     },
+                    position: 'absolute',
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    height: 'auto',
+                    overflow: 'hidden',
                 }}
-                transitionDuration={200}
+                variant="persistent"
+                transitionDuration={300}
             >
+                {/* <Button
+                    onClick={() => setInstructionsVisible(false)}
+                    variant="contained"
+                    size="small"
+                    sx={{
+                        position: 'absolute',
+                        padding: 0,
+                        top: 0,
+                        left: '50%',
+                        transform: 'translateX(-50%)',
+                        zIndex: 10001,
+                        backgroundColor: '#1976d2',
+                        color: 'white',
+                        borderTopLeftRadius: 0,
+                        borderTopRightRadius: 0,
+                        borderBottomLeftRadius: 10,
+                        borderBottomRightRadius: 10,
+                    }}
+                >
+                    Hide
+                </Button> */}
+
                 <Paper
                     elevation={3}
                     sx={{
-                        height: '100%',
+                        height: panelHeight,
                         overflow: 'scroll',
                         display: 'flex',
                         alignItems: 'center',
@@ -151,6 +195,7 @@ const InstructionsPanel: React.FC = () => {
                             sx={{ cursor: 'pointer', textAlign: 'center' }}
                         />
                     </Box>
+
                     <Box
                         sx={{
                             width: '20%',
@@ -178,25 +223,32 @@ const InstructionsPanel: React.FC = () => {
                 </Paper>
             </SwipeableDrawer>
 
-            {!instructionsVisible && (
+            {/* {!instructionsVisible && (
                 <Button
                     onClick={() => setInstructionsVisible(true)}
                     variant="contained"
                     sx={{
                         position: 'fixed',
-                        bottom: 20,
-                        right: 20,
+                        bottom: '170px',
+                        right: '10px',
+                        // left: '50%',
+                        borderTopLeftRadius: 10,
+                        borderTopRightRadius: 10,
+                        // transform: 'translateX(-50%)',
                         zIndex: 1000,
                         backgroundColor: '#1976d2',
                         color: 'white',
-                        '&:hover': {
-                            backgroundColor: '#115293',
-                        },
+                        fontSize: 15,
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        display: 'flex',
                     }}
+                    // disabled={!instructions?.length}
+                    disabled={instructions?.length !== 0}
                 >
-                    Show Instructions
+                    Instructions
                 </Button>
-            )}
+            )} */}
         </>
     );
 };

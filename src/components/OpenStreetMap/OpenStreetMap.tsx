@@ -45,7 +45,7 @@ const OpenStreetMap = () => {
     const [currentPositionVisible, setcurrentPositionVisible] =
         useState<boolean>(false);
 
-    const { currentPosition, mapRef, pois } = useMapContext();
+    const { currentPosition, mapRef, pois, mainContentStyle } = useMapContext();
 
     const mapContainerRef = useRef<L.Map[] | null>([]);
 
@@ -133,12 +133,14 @@ const OpenStreetMap = () => {
                     overflow: 'hidden',
                     borderWidth: 1,
                     borderColor: 'black',
+                    ...mainContentStyle,
                 }}
             >
                 <MapContainer
                     ref={mapContainerRef as any}
                     style={{
-                        height: '85%',
+                        // height: '85%',
+                        height: '100%',
                         width: '100%',
                         borderColor: 'black',
                     }}
@@ -164,7 +166,7 @@ const OpenStreetMap = () => {
                     <NavigationSelector />
                     {/* <Parameters /> */}
 
-                    <AcoComponent />
+                    {/* <AcoComponent /> */}
 
                     <PositionTracker />
 
@@ -175,7 +177,7 @@ const OpenStreetMap = () => {
                         style={{
                             position: 'absolute',
                             bottom: '40px',
-                            right: '20px',
+                            right: '10px',
                             zIndex: 1000,
                             height: '50px',
                             width: '50px',
