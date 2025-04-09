@@ -1,6 +1,7 @@
-import { useMemo, useState } from 'react';
+'use client';
+
+import { useMemo } from 'react';
 import dynamic from 'next/dynamic';
-import { IMainInstruction } from '@/src/models/models';
 import { MapProvider } from '@/src/contexts/MapContext';
 import InstructionsPanel from '../InstructionsPanel/InstructionsPanel';
 import { Box } from '@mui/material';

@@ -1,5 +1,7 @@
 'use client';
 
+import { redirect } from "next/navigation";
+
 export default function Page() {
     const pois = [
         { latitude: 123.12, longitude: 456.34 },
@@ -104,6 +106,8 @@ export default function Page() {
                 console.error('Error:', error);
             });
     };
+
+    return redirect('/en/map');
 
     return (
         <>

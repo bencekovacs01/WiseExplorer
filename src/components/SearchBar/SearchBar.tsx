@@ -88,7 +88,7 @@ const SearchBar = () => {
                     height: '40px',
                     backgroundColor: 'white',
                     transition: 'width 0.2s ease-in-out',
-                    borderRadius: '10%',
+                    borderRadius: '5%',
                 }}
                 slotProps={{
                     input: {

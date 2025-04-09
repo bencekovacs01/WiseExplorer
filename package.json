@@ -10,13 +10,14 @@
         "https": "ts-node server.ts"
     },
     "dependencies": {
+        "@capacitor/android": "^7.0.1",
         "@emotion/react": "^11.13.3",
         "@emotion/styled": "^11.13.0",
         "@mui/icons-material": "^6.1.4",
         "@mui/material": "^6.1.4",
         "@mui/x-tree-view": "^7.26.0",
         "@next/env": "^15.0.3",
-        "axios": "^1.7.7",
+        "axios": "1.7.8",
         "deepmerge": "^4.3.1",
         "dotenv": "^16.4.5",
         "explore-wise": "file:",
@@ -34,6 +35,7 @@
         "zustand": "^5.0.1"
     },
     "devDependencies": {
+        "@capacitor/cli": "^7.0.1",
         "@types/express": "^5.0.0",
         "@types/leaflet": "^1.9.12",
         "@types/leaflet-routing-machine": "^3.2.8",
