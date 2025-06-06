@@ -1,0 +1,557 @@
+{
+  "type": "FeatureCollection",
+  "bbox": [
+    24.547473,
+    46.53334,
+    24.551561,
+    46.535882
+  ],
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          24.549968,
+          46.53334
+        ]
+      },
+      "properties": {
+        "osm_id": 23866134,
+        "osm_type": 2,
+        "distance": 236.09556299,
+        "category_ids": {
+          "601": {
+            "category_name": "parking",
+            "category_group": "transport"
+          }
+        }
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          24.550351,
+          46.533924
+        ]
+      },
+      "properties": {
+        "osm_id": 89069714,
+        "osm_type": 2,
+        "distance": 273.61639081,
+        "category_ids": {
+          "370": {
+            "category_name": "post_office",
+            "category_group": "public_places"
+          }
+        },
+        "osm_tags": {
+          "name": "Oficiul Poștal nr. 2"
+        }
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          24.548274,
+          46.535517
+        ]
+      },
+      "properties": {
+        "osm_id": 93659364,
+        "osm_type": 2,
+        "distance": 265.33856472,
+        "category_ids": {
+          "106": {
+            "category_name": "guest_house",
+            "category_group": "accomodation"
+          }
+        },
+        "osm_tags": {
+          "name": "Pensiunea Flora"
+        }
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          24.5496,
+          46.535258
+        ]
+      },
+      "properties": {
+        "osm_id": 183258638,
+        "osm_type": 2,
+        "distance": 298.65531382,
+        "category_ids": {
+          "601": {
+            "category_name": "parking",
+            "category_group": "transport"
+          }
+        }
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          24.549096,
+          46.533442
+        ]
+      },
+      "properties": {
+        "osm_id": 258668249,
+        "osm_type": 1,
+        "distance": 169.68483785,
+        "category_ids": {
+          "604": {
+            "category_name": "station",
+            "category_group": "transport"
+          },
+          "610": {
+            "category_name": "station",
+            "category_group": "transport"
+          }
+        },
+        "osm_tags": {
+          "wheelchair": "no",
+          "name": "Târgu Mureș"
+        }
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          24.550848,
+          46.533835
+        ]
+      },
+      "properties": {
+        "osm_id": 273539990,
+        "osm_type": 1,
+        "distance": 308.81616119,
+        "category_ids": {
+          "456": {
+            "category_name": "department_store",
+            "category_group": "shops"
+          }
+        }
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          24.550094,
+          46.533629
+        ]
+      },
+      "properties": {
+        "osm_id": 539874504,
+        "osm_type": 1,
+        "distance": 248.08483455,
+        "category_ids": {
+          "607": {
+            "category_name": "platform",
+            "category_group": "transport"
+          }
+        },
+        "osm_tags": {
+          "name": "Gara CFR"
+        }
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          24.551561,
+          46.533584
+        ]
+      },
+      "properties": {
+        "osm_id": 689291317,
+        "osm_type": 2,
+        "distance": 359.42985173,
+        "category_ids": {
+          "601": {
+            "category_name": "parking",
+            "category_group": "transport"
+          }
+        }
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          24.550537,
+          46.533655
+        ]
+      },
+      "properties": {
+        "osm_id": 913972146,
+        "osm_type": 1,
+        "distance": 282.11838462,
+        "category_ids": {
+          "172": {
+            "category_name": "recycling",
+            "category_group": "facilities"
+          }
+        }
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          24.55072,
+          46.533791
+        ]
+      },
+      "properties": {
+        "osm_id": 979161309,
+        "osm_type": 1,
+        "distance": 298.27424739,
+        "category_ids": {
+          "370": {
+            "category_name": "post_office",
+            "category_group": "public_places"
+          }
+        },
+        "osm_tags": {
+          "website": "https://www.posta-romana.ro/",
+          "phone": "+40-265-224800",
+          "opening_hours": "Mo-Fr 08:00-19:00",
+          "name": "Oficiul Poștal nr. 2"
+        }
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          24.549285,
+          46.533627
+        ]
+      },
+      "properties": {
+        "osm_id": 1073560616,
+        "osm_type": 2,
+        "distance": 186.71862711,
+        "category_ids": {
+          "607": {
+            "category_name": "platform",
+            "category_group": "transport"
+          }
+        }
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          24.547473,
+          46.535882
+        ]
+      },
+      "properties": {
+        "osm_id": 1364720027,
+        "osm_type": 1,
+        "distance": 287.24594909,
+        "category_ids": {
+          "607": {
+            "category_name": "platform",
+            "category_group": "transport"
+          }
+        },
+        "osm_tags": {
+          "name": "Nicolae Bălcescu"
+        }
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          24.549533,
+          46.533452
+        ]
+      },
+      "properties": {
+        "osm_id": 9484271488,
+        "osm_type": 1,
+        "distance": 203.23509684,
+        "category_ids": {
+          "208": {
+            "category_name": "pharmacy",
+            "category_group": "healthcare"
+          }
+        },
+        "osm_tags": {
+          "opening_hours": "Mo-Fr 08:00-20:00; Sa-Su 08:00-14:00",
+          "name": "Farmatop"
+        }
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          24.550653,
+          46.533575
+        ]
+      },
+      "properties": {
+        "osm_id": 9484271489,
+        "osm_type": 1,
+        "distance": 289.98695997,
+        "category_ids": {
+          "208": {
+            "category_name": "pharmacy",
+            "category_group": "healthcare"
+          }
+        },
+        "osm_tags": {
+          "opening_hours": "Mo-Fr 08:00-20:00; Sa 08:00-14:00",
+          "name": "Ropharma"
+        }
+      }
+    }
+  ],
+  "information": {
+    "attribution": "openrouteservice.org | OpenStreetMap contributors",
+    "version": "0.1",
+    "timestamp": 1747242997,
+    "query": {
+      "request": "pois",
+      "geometry": {
+        "bbox": [
+          [
+            24.546890258789062,
+            46.533329032943236
+          ],
+          [
+            24.57178115844727,
+            46.543542981979535
+          ]
+        ],
+        "geojson": {
+          "type": "Point",
+          "coordinates": [
+            24.546890258789062,
+            46.533329032943236
+          ]
+        },
+        "buffer": 500
+      }
+    }
+  },
+  "pois": [
+    {
+      "latitude": 46.53334,
+      "longitude": 24.549968
+    },
+    {
+      "latitude": 46.533924,
+      "longitude": 24.550351
+    },
+    {
+      "latitude": 46.535517,
+      "longitude": 24.548274
+    },
+    {
+      "latitude": 46.535258,
+      "longitude": 24.5496
+    },
+    {
+      "latitude": 46.533442,
+      "longitude": 24.549096
+    },
+    {
+      "latitude": 46.533835,
+      "longitude": 24.550848
+    },
+    {
+      "latitude": 46.533629,
+      "longitude": 24.550094
+    },
+    {
+      "latitude": 46.533584,
+      "longitude": 24.551561
+    },
+    {
+      "latitude": 46.533655,
+      "longitude": 24.550537
+    },
+    {
+      "latitude": 46.533791,
+      "longitude": 24.55072
+    },
+    {
+      "latitude": 46.533627,
+      "longitude": 24.549285
+    },
+    {
+      "latitude": 46.535882,
+      "longitude": 24.547473
+    },
+    {
+      "latitude": 46.533452,
+      "longitude": 24.549533
+    },
+    {
+      "latitude": 46.533575,
+      "longitude": 24.550653
+    }
+  ],
+  "poiMetadata": [
+    {
+      "category": null,
+      "subCategory": null
+    },
+    {
+      "category": "transport",
+      "subCategory": "parking"
+    },
+    {
+      "category": "public_places",
+      "subCategory": "post_office"
+    },
+    {
+      "category": "accomodation",
+      "subCategory": "guest_house"
+    },
+    {
+      "category": "transport",
+      "subCategory": "parking"
+    },
+    {
+      "category": "transport",
+      "subCategory": "station"
+    },
+    {
+      "category": "shops",
+      "subCategory": "department_store"
+    },
+    {
+      "category": "transport",
+      "subCategory": "platform"
+    },
+    {
+      "category": "transport",
+      "subCategory": "parking"
+    },
+    {
+      "category": "facilities",
+      "subCategory": "recycling"
+    },
+    {
+      "category": "public_places",
+      "subCategory": "post_office"
+    },
+    {
+      "category": "transport",
+      "subCategory": "platform"
+    },
+    {
+      "category": "transport",
+      "subCategory": "platform"
+    },
+    {
+      "category": "healthcare",
+      "subCategory": "pharmacy"
+    },
+    {
+      "category": "healthcare",
+      "subCategory": "pharmacy"
+    },
+    {
+      "category": null,
+      "subCategory": null
+    }
+  ],
+  "poiVisitDurations": [
+    {
+      "poiIndex": 0,
+      "visitDuration": 0
+    },
+    {
+      "poiIndex": 1,
+      "visitDuration": 5
+    },
+    {
+      "poiIndex": 2,
+      "visitDuration": 20
+    },
+    {
+      "poiIndex": 3,
+      "visitDuration": 720
+    },
+    {
+      "poiIndex": 4,
+      "visitDuration": 5
+    },
+    {
+      "poiIndex": 5,
+      "visitDuration": 30
+    },
+    {
+      "poiIndex": 6,
+      "visitDuration": 90
+    },
+    {
+      "poiIndex": 7,
+      "visitDuration": 15
+    },
+    {
+      "poiIndex": 8,
+      "visitDuration": 5
+    },
+    {
+      "poiIndex": 9,
+      "visitDuration": 10
+    },
+    {
+      "poiIndex": 10,
+      "visitDuration": 20
+    },
+    {
+      "poiIndex": 11,
+      "visitDuration": 15
+    },
+    {
+      "poiIndex": 12,
+      "visitDuration": 15
+    },
+    {
+      "poiIndex": 13,
+      "visitDuration": 15
+    },
+    {
+      "poiIndex": 14,
+      "visitDuration": 15
+    },
+    {
+      "poiIndex": 15,
+      "visitDuration": 0
+    }
+  ]
+}

@@ -229,11 +229,14 @@ const RoutingControl: React.FC<RoutingControlProps> = ({ positions }) => {
                 return null;
             },
             router: L.Routing.osrmv1({
-                serviceUrl: `http://localhost:${
-                    navigationType === 'car'
-                        ? process.env.CAR_NAV_PORT
-                        : process.env.FOOT_NAV_PORT
-                }/route/v1`,
+                serviceUrl:
+                    process.env.NODE_ENV === 'production'
+                        ? 'https://router.project-osrm.org/route/v1'
+                        : `http://localhost:${
+                              navigationType === 'car'
+                                  ? process.env.CAR_NAV_PORT
+                                  : process.env.FOOT_NAV_PORT
+                          }/route/v1`,
                 profile: 'car',
                 language: 'en',
             }),
