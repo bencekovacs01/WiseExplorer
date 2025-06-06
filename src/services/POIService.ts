@@ -123,7 +123,7 @@ export class POIService {
      * @param poiMetadata Metadata for each POI including category information
      * @returns A promise that resolves to an object containing the optimal route and matrices
      */
-    public async findMinimumTimeRouteBt(
+    public async findMinimumRouteBt(
         pois: Coordinate[],
         poiMetadata: Array<{
             category?: string | null;
@@ -142,17 +142,14 @@ export class POIService {
             );
         }
 
-        // Get the distance and duration matrices
         const { distanceMatrix, durationMatrix } = await this.getRouteMatrices(
             pois,
         );
 
-        // Calculate the optimal route
-        const optimalRoute =
-            await this.backtrackingService.findMinimumTimeRouteBt(
-                pois,
-                poiMetadata,
-            );
+        const optimalRoute = await this.backtrackingService.findMinimumRouteBt(
+            pois,
+            poiMetadata,
+        );
 
         return {
             optimalRoute,
@@ -162,120 +159,6 @@ export class POIService {
             },
         };
     }
-
-    /**
-     * Fetches standard POIs for a given start and end coordinate within a buffer distance.
-     * Then computes the optimal route through the POIs using the BacktrackingService.
-     * @param start The starting coordinate.
-     * @param end The ending coordinate.
-     * @param buffer The buffer distance for POI search. Default is 250.
-     * @param categoryIds Optional array of category IDs to filter POIs.
-     * @param categoryGroupIds Optional array of category group IDs to filter POIs.
-     * @returns A promise that resolves to a JSON string containing POI data and optimal route.
-     */
-    // public async getPOIsStandard(
-    //     start: Coordinate,
-    //     end: Coordinate,
-    //     buffer: number = 250,
-    //     categoryIds?: number[],
-    //     categoryGroupIds?: number[],
-    // ): Promise<string> {
-    //     const isCategoriesNotEmtpy = categoryIds && categoryIds.length > 0;
-    //     const isCategoryGroupsNotEmpty =
-    //         categoryGroupIds && categoryGroupIds.length > 0;
-
-    //     const json = {
-    //         request: 'pois',
-    //         geometry: {
-    //             bbox: [
-    //                 [start.longitude, start.latitude],
-    //                 [end.longitude, end.latitude],
-    //             ],
-    //             geojson: {
-    //                 type: 'Point',
-    //                 coordinates: [start.longitude, start.latitude],
-    //             },
-    //             buffer: buffer,
-    //         },
-    //         ...(isCategoriesNotEmtpy && {
-    //             filters: { category_ids: categoryIds },
-    //         }),
-    //         ...(isCategoryGroupsNotEmpty && {
-    //             filters: { category_group_ids: categoryGroupIds },
-    //         }),
-    //     };
-
-    //     const response = await this.client
-    //         .post(
-    //             `${this.openRouteServiceBaseUrl}?api_key=${this.ORS_KEY}`,
-    //             json,
-    //             {
-    //                 headers: {
-    //                     'Content-Type': 'application/json',
-    //                 },
-    //             },
-    //         )
-    //         .catch((error) => {
-    //             console.error('POI_error:', error?.response?.data);
-    //             throw new Error(`POI_error: ${error?.response?.data}`);
-    //         })
-    //         .then(async (response) => {
-    //             const pois = this.extractPointsFromResponse(
-    //                 JSON.stringify(response.data),
-    //             );
-
-    //             const poiMetadata = this.extractPOIMetadata(response.data);
-
-    //             poiMetadata.unshift({ category: null, subCategory: null });
-    //             poiMetadata.push({ category: null, subCategory: null });
-
-    //             const { distanceMatrix, durationMatrix } =
-    //                 await this.getRouteMatrices(pois);
-
-    //             const optimalRoute =
-    //                 await this.backtrackingService.findMinimumTimeRouteBt(
-    //                     pois,
-    //                     distanceMatrix,
-    //                     durationMatrix,
-    //                     poiMetadata,
-    //                 );
-
-    //             let responseData;
-
-    //             if (typeof response?.data === 'string') {
-    //                 const sanitizedString = response?.data.replace(
-    //                     /\bNaN\b/g,
-    //                     'null',
-    //                 );
-    //                 responseData = JSON.parse(sanitizedString);
-    //             } else {
-    //                 responseData = response?.data;
-    //             }
-
-    //             const enhancedResponse = {
-    //                 ...responseData,
-    //                 optimalRoute,
-    //                 matrices: {
-    //                     distance: distanceMatrix,
-    //                     duration: durationMatrix,
-    //                 },
-    //                 poiVisitDurations: poiMetadata.map((meta, index) => ({
-    //                     poiIndex: index,
-    //                     visitDuration:
-    //                         meta.category && meta.subCategory
-    //                             ? this.backtrackingService.getVisitDuration(
-    //                                   meta.category,
-    //                                   meta.subCategory,
-    //                               )
-    //                             : 0,
-    //                 })),
-    //             };
-
-    //             return JSON.stringify(enhancedResponse);
-    //         });
-
-    //     return response;
-    // }
 
     /**
      * Extracts metadata including category information from POI response

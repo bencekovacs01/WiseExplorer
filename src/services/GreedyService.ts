@@ -1,6 +1,7 @@
 import Coordinate from '../models/Coordinate';
 import Route from '../models/Route';
 import { orsApi } from '../utils/apiWrapper';
+import { calculateRouteMetric } from '../utils/route.utils';
 
 /**
  * GreedyService provides methods to find the minimum distance route among a set of points using greedy method.

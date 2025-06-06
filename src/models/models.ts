@@ -56,3 +56,8 @@ export interface ICoordinate {
     lat: number;
     lng: number;
 }
+
+export interface IPoiData {
+    category?: string | undefined | null;
+    subCategory?: string | undefined | null;
+}
