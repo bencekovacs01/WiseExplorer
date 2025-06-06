@@ -1,9 +1,8 @@
 'use client';
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, ImageOverlay } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
-import { greedyPois } from '@/src/constants/constants';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import 'leaflet-routing-machine';
@@ -18,9 +17,10 @@ import Selector from '../Selector/Selector';
 import { useShallow } from 'zustand/shallow';
 import usePOIStore from '@/src/store/poiStore';
 import SearchBar from '../SearchBar/SearchBar';
-import AcoComponent from '../Aco/Aco';
 import NavigationSelector from '../NavigationSelector/NavigationSelector';
 import CategorySelector from '../CategorySelector/CategorySelector';
+import Parameters from '../Parameters/Parameters';
+import AcoComponent from '../Aco/Aco';
 
 interface IRouteResponse {
     route: IRoute[];
@@ -125,76 +125,74 @@ const OpenStreetMap = () => {
     };
 
     return (
-        <>
-            <div
+        <div
+            style={{
+                height: '100%',
+                width: '100%',
+                overflow: 'hidden',
+                borderWidth: 1,
+                borderColor: 'black',
+                ...mainContentStyle,
+            }}
+        >
+            <MapContainer
+                ref={mapContainerRef as any}
                 style={{
                     height: '100%',
                     width: '100%',
-                    overflow: 'hidden',
-                    borderWidth: 1,
                     borderColor: 'black',
-                    ...mainContentStyle,
                 }}
+                center={[46.5417, 24.5617]}
+                zoom={13}
+                scrollWheelZoom={true}
             >
-                <MapContainer
-                    ref={mapContainerRef as any}
+                <TileLayer
+                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                />
+
+                {positions?.length > 1 && (
+                    <RoutingControl positions={positions} />
+                )}
+
+                {pois?.length > 1 && <RoutingControl positions={pois} />}
+
+                <Selector />
+
+                <SearchBar />
+
+                <NavigationSelector />
+
+                {/* <Parameters /> */}
+
+                <AcoComponent />
+
+                <PositionTracker />
+
+                <Button
+                    variant="contained"
+                    color="primary"
+                    onClick={flyToCurrentPosition}
                     style={{
-                        // height: '85%',
-                        height: '100%',
-                        width: '100%',
-                        borderColor: 'black',
+                        position: 'absolute',
+                        bottom: '40px',
+                        right: '10px',
+                        zIndex: 1000,
+                        height: '50px',
+                        width: '50px',
+                        borderRadius: '50%',
+                        padding: 0,
+                        minWidth: 0,
                     }}
-                    center={[46.5417, 24.5617]}
-                    zoom={13}
-                    scrollWheelZoom={true}
                 >
-                    <TileLayer
-                        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                    />
+                    {renderGpsIcon()}
+                </Button>
+            </MapContainer>
 
-                    {positions?.length > 1 && (
-                        <RoutingControl positions={positions} />
-                    )}
+            <CategorySelector />
 
-                    {pois?.length > 1 && <RoutingControl positions={pois} />}
-
-                    <Selector />
-
-                    <SearchBar />
-
-                    <NavigationSelector />
-                    {/* <Parameters /> */}
-
-                    {/* <AcoComponent /> */}
-
-                    <PositionTracker />
-
-                    <Button
-                        variant="contained"
-                        color="primary"
-                        onClick={flyToCurrentPosition}
-                        style={{
-                            position: 'absolute',
-                            bottom: '40px',
-                            right: '10px',
-                            zIndex: 1000,
-                            height: '50px',
-                            width: '50px',
-                            borderRadius: '50%',
-                            padding: 0,
-                            minWidth: 0,
-                        }}
-                    >
-                        {renderGpsIcon()}
-                    </Button>
-                </MapContainer>
-
-                <CategorySelector />
-
-                {loading && <Loader loading />}
-            </div>
-        </>
+            {loading && <Loader loading />}
+        </div>
     );
 };
 

@@ -1,19 +1,15 @@
-// 'use client';
-
+import Header from '@/src/components/Header/Header';
 import MapPage from '@/src/components/MapPage/MapPage';
 
-// This function tells Next.js which locales to pre-render at build time
 export function generateStaticParams() {
-  // Add all locales your app supports
-  return [
-    { locale: 'en' },
-    { locale: 'es' },
-    { locale: 'de' },
-    { locale: 'fr' }
-    // Add any other locales you support
-  ];
+    return [{ locale: 'en' }, { locale: 'hu' }, { locale: 'ro' }];
 }
 
 export default function Page() {
-    return <MapPage />;
+    return (
+        <>
+            <Header onlyLogo />
+            <MapPage />
+        </>
+    );
 }
