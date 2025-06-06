@@ -4,11 +4,33 @@ import { orsApi } from '../utils/apiWrapper';
 
 import CategoryDurations from '../components/CategorySelector/category_times.json';
 import axios, { AxiosInstance } from 'axios';
+import { IPoiData } from '../models/models';
+import { clusterNearbyPOIs } from '../utils/cluster.utils';
+import {
+    calculateRouteMetric,
+    expandClusteredRoute,
+    getRouteMatrices,
+} from '../utils/route.utils';
+
+export enum SortStrategy {
+    WEST_TO_EAST = 'west-to-east', // Default W-E
+    EAST_TO_WEST = 'east-to-west', // E-W
+    SOUTH_TO_NORTH = 'south-to-north', // S-N
+    NORTH_TO_SOUTH = 'north-to-south', // N-S
+}
 
 /**
  * BitonicService provides methods to find routes using the bitonic TSP algorithm.
  * The bitonic algorithm produces a tour without crossings by visiting points
- * in non-decreasing x-coordinate order and then non-increasing order.
+ * in order based on a chosen coordinate strategy:
+ * - West to East (default): visit points in non-decreasing longitude order, then non-increasing
+ * - East to West: visit points in non-increasing longitude order, then non-decreasing
+ * - South to North: visit points in non-decreasing latitude order, then non-increasing
+ * - North to South: visit points in non-increasing latitude order, then non-decreasing
+ *
+ * The algorithm now optimizes for total time (travel time + visit time) rather than just
+ * distance. This means the chosen route will prioritize minimizing the overall
+ * experience time, including both travel between points and time spent at each location.
  */
 export class BitonicService {
     private orsApi = orsApi;
@@ -49,53 +71,25 @@ export class BitonicService {
         distanceMatrix: number[][];
         durationMatrix: number[][];
     }> {
-        if (coordinates.length < 2) {
-            throw new Error(
-                'At least two coordinates are required for matrix calculation',
-            );
-        }
-
-        const locations = coordinates.map((coord) => [
-            coord.longitude,
-            coord.latitude,
-        ]);
-
-        try {
-            const response = await this.client.post(
-                `${this.matrixBaseUrl}?api_key=${this.ORS_KEY}`,
-                {
-                    locations,
-                    metrics: ['distance', 'duration'],
-                },
-                {
-                    headers: {
-                        Accept: 'application/json, application/geo+json, application/gpx+xml',
-                        'Content-Type': 'application/json',
-                    },
-                },
-            );
-
-            const distanceMatrix = response.data.distances;
-            const durationMatrix = response.data.durations;
-
-            return { distanceMatrix, durationMatrix };
-        } catch (error: any) {
-            console.error(
-                'Error fetching route matrices:',
-                error?.response?.data || error,
-            );
-            throw new Error('Failed to fetch route matrices');
-        }
+        // Using shared implementation from route.utils.ts
+        return getRouteMatrices(coordinates);
     }
 
-    // Update the findBitonicRoute method to include time calculations
+    /**
+     * Finds an optimal route using the bitonic tour algorithm.
+     * This method optimizes for total time (travel time + visit time).
+     *
+     * @param pois Array of coordinates representing points of interest
+     * @param poiMetadata Optional metadata about POIs including category information
+     * @param maxClusterDistance Maximum distance in meters to cluster nearby POIs
+     * @param sortStrategy Strategy to use for sorting points (determines the direction of the tour)
+     * @returns A promise that resolves to the optimal route
+     */
     public async findBitonicRoute(
         pois: Coordinate[],
-        poiMetadata?: Array<{
-            category?: string | null;
-            subCategory?: string | null;
-        }>,
+        poiMetadata?: IPoiData[],
         maxClusterDistance: number = 100,
+        sortStrategy: SortStrategy = SortStrategy.WEST_TO_EAST,
     ): Promise<Route> {
         if (pois.length < 2) {
             throw new Error(
@@ -104,12 +98,12 @@ export class BitonicService {
         }
 
         // Cluster nearby POIs for efficiency
-        const { clusteredPois, clusteredMetadata } = this.clusterNearbyPOIs(
+        const { clusteredPois, clusteredMetadata } = clusterNearbyPOIs(
             pois,
             maxClusterDistance,
             poiMetadata,
         );
-        
+
         // Get distance and duration matrices
         const { distanceMatrix, durationMatrix } = await this.getRouteMatrices(
             clusteredPois,
@@ -118,8 +112,22 @@ export class BitonicService {
         // Create a copy for sorting
         const sortedPois = [...clusteredPois];
 
-        // Sort by longitude (x-coordinate)
-        sortedPois.sort((a, b) => a.longitude - b.longitude);
+        // Sort based on selected strategy
+        switch (sortStrategy) {
+            case SortStrategy.EAST_TO_WEST:
+                sortedPois.sort((a, b) => b.longitude - a.longitude);
+                break;
+            case SortStrategy.SOUTH_TO_NORTH:
+                sortedPois.sort((a, b) => a.latitude - b.latitude);
+                break;
+            case SortStrategy.NORTH_TO_SOUTH:
+                sortedPois.sort((a, b) => b.latitude - a.latitude);
+                break;
+            case SortStrategy.WEST_TO_EAST:
+            default:
+                sortedPois.sort((a, b) => a.longitude - b.longitude);
+                break;
+        }
 
         // Create index mapping from sorted to original
         const sortedToOriginalIndex = new Map<string, number>();
@@ -145,7 +153,7 @@ export class BitonicService {
         for (let i = 0; i < n; i++) {
             dp[i][i] = 0;
             if (i < n - 1) {
-                // Use actual distance from matrix
+                // Use duration matrix instead of distance matrix for optimization
                 const origI =
                     sortedToOriginalIndex.get(this.getPoiKey(sortedPois[i])) ||
                     i;
@@ -153,19 +161,34 @@ export class BitonicService {
                     sortedToOriginalIndex.get(
                         this.getPoiKey(sortedPois[i + 1]),
                     ) || i + 1;
-                dp[i][i + 1] = distanceMatrix[origI][origJ];
+
+                // Calculate total time: travel time + visit time
+                let combinedTime = durationMatrix[origI][origJ];
+
+                // Add visit time for middle point (not for start/end if this is a 2-point path)
+                // No visit time for destination point
+                const metadata = clusteredMetadata[origJ];
+                if (metadata) {
+                    const visitDuration = this.getVisitDuration(
+                        metadata.category,
+                        metadata.subCategory,
+                    );
+                    combinedTime += visitDuration * 60; // Convert minutes to seconds
+                }
+
+                dp[i][i + 1] = combinedTime;
                 next[i][i + 1] = i + 1;
             }
         }
 
-        // Dynamic programming to build the bitonic tour
+        // Dynamic programming to build the bitonic tour optimized for total time
         for (let l = 3; l <= n; l++) {
             for (let i = 0; i <= n - l; i++) {
                 const j = i + l - 1;
 
                 // Try all possible connections from i to j
                 for (let k = i + 1; k < j; k++) {
-                    // Use actual distances from matrix
+                    // Use travel time + visit time for optimization
                     const origK =
                         sortedToOriginalIndex.get(
                             this.getPoiKey(sortedPois[k]),
@@ -175,10 +198,25 @@ export class BitonicService {
                             this.getPoiKey(sortedPois[j]),
                         ) || j;
 
-                    const newDist = dp[i][k] + distanceMatrix[origK][origJ];
+                    // Calculate travel time between these points
+                    let travelTime = durationMatrix[origK][origJ];
 
-                    if (newDist < dp[i][j]) {
-                        dp[i][j] = newDist;
+                    // Add visit time for the destination point (if not the final destination)
+                    // No visit time for the very last point in the tour
+                    let totalTime = dp[i][k] + travelTime;
+                    if (j < n - 1) {
+                        const metadata = clusteredMetadata[origJ];
+                        if (metadata) {
+                            const visitDuration = this.getVisitDuration(
+                                metadata.category,
+                                metadata.subCategory,
+                            );
+                            totalTime += visitDuration * 60; // Convert minutes to seconds
+                        }
+                    }
+
+                    if (totalTime < dp[i][j]) {
+                        dp[i][j] = totalTime;
                         next[i][j] = k;
                     }
                 }
@@ -213,31 +251,48 @@ export class BitonicService {
         }
 
         // Calculate total distance and time
-        let totalDistance = 0;
         let travelDuration = 0;
         let visitTime = 0;
 
-        // Calculate route metrics using matrices
+        // Create a mapping of coordinates to their indices in the clusteredPois array
+        const coordToIndex = new Map<string, number>();
+        clusteredPois.forEach((poi, index) => {
+            const key = `${poi.latitude},${poi.longitude}`;
+            coordToIndex.set(key, index);
+        });
+
+        // Transform route into indices for matrix calculations
+        const routeIndices = route
+            .map((point) => {
+                const key = `${point.latitude},${point.longitude}`;
+                return coordToIndex.get(key) || -1;
+            })
+            .filter((index) => index !== -1);
+
+        // Use the shared utility to calculate total distance
+        const totalDistance = calculateRouteMetric(
+            route,
+            distanceMatrix,
+            coordToIndex,
+        );
+
+        // Calculate travel duration
         for (let i = 0; i < route.length - 1; i++) {
-            // Find indices in the original clusteredPois array
-            const origI = clusteredPois.findIndex(
-                (poi) =>
-                    poi.latitude === route[i].latitude &&
-                    poi.longitude === route[i].longitude,
-            );
+            const key1 = `${route[i].latitude},${route[i].longitude}`;
+            const key2 = `${route[i + 1].latitude},${route[i + 1].longitude}`;
+            const origI = coordToIndex.get(key1);
+            const origJ = coordToIndex.get(key2);
 
-            const origJ = clusteredPois.findIndex(
-                (poi) =>
-                    poi.latitude === route[i + 1].latitude &&
-                    poi.longitude === route[i + 1].longitude,
-            );
-
-            if (origI !== -1 && origJ !== -1) {
-                totalDistance += distanceMatrix[origI][origJ];
+            if (origI !== undefined && origJ !== undefined) {
                 travelDuration += durationMatrix[origI][origJ];
+            } else {
+                console.warn(
+                    `Coordinates not found in matrix: ${key1} or ${key2}`,
+                );
+
+                break;
             }
 
-            // Add visit time for current POI
             if (i < route.length - 1) {
                 // Don't add visit time for the last point (destination)
                 const metadata = clusteredMetadata[origI];
@@ -246,25 +301,30 @@ export class BitonicService {
                         metadata.category,
                         metadata.subCategory,
                     );
-                    visitTime += duration;
+                    visitTime += duration * 60; // Convert minutes to seconds
                 }
             }
         }
 
+        // Add visit time for current POI
+
+        console.log('totalDistance', totalDistance);
+        const totalTime = travelDuration + visitTime;
         // Create the route object with all metrics
         const bitonicRoute = new Route(
             route,
             totalDistance,
             travelDuration, // Travel duration in seconds
-            visitTime, // Visit time in seconds (convert from minutes)
-            travelDuration + visitTime, // Total time in seconds
+            visitTime / 60, // Visit time in minutes for reporting
+            totalTime / 60, // Total time in minutes
         );
 
         // Expand the route to include all original POIs
-        const expandedRoute = this.expandClusteredRoute(
+        const expandedRoute = expandClusteredRoute(
             bitonicRoute,
             clusteredMetadata,
             pois,
+            true, // Use point-based matching
         );
 
         return expandedRoute;
@@ -311,189 +371,7 @@ export class BitonicService {
         return `${poi.latitude},${poi.longitude}`;
     }
 
-    /**
-     * Calculate distance between two points using the Haversine formula
-     */
-    private calculateHaversineDistance(
-        lat1: number,
-        lon1: number,
-        lat2: number,
-        lon2: number,
-    ): number {
-        const R = 6371e3; // Earth radius in meters
-        const φ1 = (lat1 * Math.PI) / 180;
-        const φ2 = (lat2 * Math.PI) / 180;
-        const Δφ = ((lat2 - lat1) * Math.PI) / 180;
-        const Δλ = ((lon2 - lon1) * Math.PI) / 180;
-
-        const a =
-            Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
-            Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
-        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-
-        return R * c; // distance in meters
-    }
-
-    /**
-     * Clusters nearby POIs for routing efficiency but preserves all POIs for display
-     */
-    private clusterNearbyPOIs(
-        pois: Coordinate[],
-        maxClusterDistance: number = 100, // 100 meters by default
-        poiMetadata?: Array<{
-            category?: string | null;
-            subCategory?: string | null;
-        }>,
-    ): {
-        clusteredPois: Coordinate[];
-        clusteredMetadata: Array<{
-            category?: string | null;
-            subCategory?: string | null;
-            clusteredIds: number[];
-        }>;
-    } {
-        // Don't cluster start and end points
-        const startPoint = pois[0];
-        const endPoint = pois[pois.length - 1];
-
-        // Skip processing if we only have start and end points
-        if (pois.length <= 2) {
-            return {
-                clusteredPois: pois,
-                clusteredMetadata:
-                    poiMetadata?.map((meta, index) => ({
-                        ...meta,
-                        clusteredIds: [index],
-                    })) || [],
-            };
-        }
-
-        // Get the POIs between start and end
-        const poiList = pois.slice(1, pois.length - 1);
-        const metadataList =
-            poiMetadata?.slice(1, poiMetadata.length - 1) || [];
-
-        const clusters: number[][] = [];
-        const visited = new Set<number>();
-
-        // Create clusters based on proximity
-        for (let i = 0; i < poiList.length; i++) {
-            if (visited.has(i)) continue;
-
-            const cluster = [i];
-            visited.add(i);
-
-            for (let j = 0; j < poiList.length; j++) {
-                if (i === j || visited.has(j)) continue;
-
-                // Calculate distance between POIs
-                const distance = this.calculateHaversineDistance(
-                    poiList[i].latitude,
-                    poiList[i].longitude,
-                    poiList[j].latitude,
-                    poiList[j].longitude,
-                );
-
-                if (distance <= maxClusterDistance) {
-                    cluster.push(j);
-                    visited.add(j);
-                }
-            }
-
-            clusters.push(cluster);
-        }
-
-        // Create clustered POIs and metadata
-        const clusteredPois: Coordinate[] = [startPoint];
-        const clusteredMetadata: Array<{
-            category?: string | null;
-            subCategory?: string | null;
-            clusteredIds: number[];
-        }> = [{ category: null, subCategory: null, clusteredIds: [0] }];
-
-        for (const cluster of clusters) {
-            // Use the first POI in the cluster as the representative point for navigation
-            const representativePOI = poiList[cluster[0]];
-            clusteredPois.push(representativePOI);
-
-            // Store all POI indices that belong to this cluster (add 1 to account for start point)
-            const clusterMetadata = {
-                category: metadataList[cluster[0]]?.category || null,
-                subCategory: metadataList[cluster[0]]?.subCategory || null,
-                clusteredIds: cluster.map((idx) => idx + 1), // Add 1 because we removed the start point
-            };
-            clusteredMetadata.push(clusterMetadata);
-        }
-
-        // Add end point
-        clusteredPois.push(endPoint);
-        clusteredMetadata.push({
-            category: null,
-            subCategory: null,
-            clusteredIds: [pois.length - 1],
-        });
-
-        return { clusteredPois, clusteredMetadata };
-    }
-
-    /**
-     * Expands a clustered route back to include all original POIs for display
-     */
-    private expandClusteredRoute(
-        clusteredRoute: Route,
-        clusteredMetadata: Array<{
-            category?: string | null;
-            subCategory?: string | null;
-            clusteredIds: number[];
-        }>,
-        originalPois: Coordinate[],
-    ): Route {
-        if (!clusteredRoute) return clusteredRoute;
-
-        // Create a mapping to reconstruct the full route with all POIs
-        const expandedPoints: Coordinate[] = [];
-        const visitedOriginalIndices = new Set<number>();
-
-        // For each point in the clustered route
-        for (let i = 0; i < clusteredRoute.points.length; i++) {
-            const point = clusteredRoute.points[i];
-
-            // Find the metadata entry for this point
-            const metadata = clusteredMetadata.find((meta) =>
-                meta.clusteredIds.some((id) => {
-                    const origPoi = originalPois[id];
-                    return (
-                        origPoi.latitude === point.latitude &&
-                        origPoi.longitude === point.longitude
-                    );
-                }),
-            );
-
-            // Add all POIs from this cluster
-            if (metadata && metadata.clusteredIds) {
-                for (const origIndex of metadata.clusteredIds) {
-                    if (!visitedOriginalIndices.has(origIndex)) {
-                        expandedPoints.push(originalPois[origIndex]);
-                        visitedOriginalIndices.add(origIndex);
-                    }
-                }
-            }
-        }
-
-        // Create a new route with all original POIs but preserving the optimal order
-        const expandedRoute = new Route(
-            expandedPoints,
-            clusteredRoute.totalDistance,
-            clusteredRoute.duration,
-            clusteredRoute.visitTime,
-            clusteredRoute.totalTime,
-        );
-
-        // Store the clustering information for the frontend
-        expandedRoute.clusterInfo = clusteredMetadata;
-
-        return expandedRoute;
-    }
+    // Using expandClusteredRoute from route.utils.ts
 }
 
 export default BitonicService;
