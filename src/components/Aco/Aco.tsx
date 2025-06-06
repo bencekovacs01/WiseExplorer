@@ -10,10 +10,11 @@ import usePOIStore from '@/src/store/poiStore';
 import InterestsIcon from '@mui/icons-material/Interests';
 import { useMapContext } from '@/src/contexts/MapContext';
 
-import points from './data.json';
+import poiData from '../Selector/poiData.json';
 import distances from './distances.json';
 import ACO from '@/src/services/AcoService';
 import Coordinate from '@/src/models/Coordinate';
+import { IPosition } from '@/src/models/models';
 
 interface POI {
     lat: number;
@@ -25,31 +26,38 @@ const AcoComponent = () => {
 
     const [corners, setCorners] = useState<L.LatLng[]>([]);
 
-    const { setPois, navigationType, evaporationRate, iterations } =
+    const { pois, setPois, navigationType, evaporationRate, iterations } =
         useMapContext();
 
     const [loadDistanceMatrix] = usePOIStore(
         useShallow((state) => [state.loadDistanceMatrix]),
     );
 
-    const [distanceMatrix, setDistanceMatrix] = useState<number[][]>([]);
+    const [distanceMatrix, setDistanceMatrix] = useState<number[][]>(distances);
     const [pheromones, setPheromones] = useState<number[][]>([]);
     const [antPaths, setAntPaths] = useState<number[][]>([]);
 
-    const pois = [
-        { latitude: 46.49596, longitude: 24.57086 },
-        { latitude: 46.58635, longitude: 24.56335 },
-        { latitude: 46.55743, longitude: 24.56356 },
-        { latitude: 46.58374, longitude: 24.59542 },
-        { latitude: 46.56094, longitude: 24.58447 },
-        { latitude: 46.57072, longitude: 24.54501 },
-        { latitude: 46.50603, longitude: 24.52888 },
-        { latitude: 46.53003, longitude: 24.59174 },
-        { latitude: 46.5743, longitude: 24.56059 },
-        { latitude: 46.54451, longitude: 24.59205 },
-    ];
+    // const pois = [
+    //     { latitude: 46.49596, longitude: 24.57086 },
+    //     { latitude: 46.58635, longitude: 24.56335 },
+    //     { latitude: 46.55743, longitude: 24.56356 },
+    //     { latitude: 46.58374, longitude: 24.59542 },
+    //     { latitude: 46.56094, longitude: 24.58447 },
+    //     { latitude: 46.57072, longitude: 24.54501 },
+    //     { latitude: 46.50603, longitude: 24.52888 },
+    //     { latitude: 46.53003, longitude: 24.59174 },
+    //     { latitude: 46.5743, longitude: 24.56059 },
+    //     { latitude: 46.54451, longitude: 24.59205 },
+    // ];
 
-    const [data, setData] = useState<Coordinate[]>(pois);
+    console.log('poiData', poiData);
+    const poiList = poiData?.features.map((poi: any) => ({
+        latitude: poi?.geometry?.coordinates?.[1],
+        longitude: poi?.geometry?.coordinates?.[0],
+    }));
+
+    const [data, setData] = useState<Coordinate[]>(poiList);
+    console.log('data2', data);
     // points?.map
     //     ? points.map((poi: POI) => new Coordinate(poi.lat, poi.lng))
     //     : [],
@@ -92,21 +100,20 @@ const AcoComponent = () => {
         );
     };
 
-    useEffect(() => {
-        // data.forEach((poi) => {
-        //     L.circleMarker([poi.latitude, poi.longitude], {
-        //         radius: 6,
-        //         color: 'red',
-        //         fillColor: 'red',
-        //         fillOpacity: 1,
-        //     }).addTo(map);
-        // });
+    // useEffect(() => {
+    // data.forEach((poi) => {
+    //     L.circleMarker([poi.latitude, poi.longitude], {
+    //         radius: 6,
+    //         color: 'red',
+    //         fillColor: 'red',
+    //         fillOpacity: 1,
+    //     }).addTo(map);
+    // });
 
-        // loadDistanceMatrix(data).then((matrix: any) => {
-        loadDistanceMatrix(data).then((matrix: any) => {
-            setDistanceMatrix(matrix);
-        });
-    }, [map, data, loadDistanceMatrix]);
+    // loadDistanceMatrix(data).then((matrix: any) => {
+    //     setDistanceMatrix(matrix);
+    // });
+    // }, [map, data, loadDistanceMatrix]);
 
     const getPheromoneColor = (value: number): string => {
         const maxPheromone = 10; // Adjust based on expected max value
@@ -213,8 +220,8 @@ const AcoComponent = () => {
             onClick={handleOnClick}
             style={{
                 position: 'absolute',
-                top: '130px',
-                right: '10px',
+                top: '75px',
+                right: '20px',
                 zIndex: 998,
                 height: '50px',
                 width: '50px',

@@ -104,8 +104,8 @@ const CategorySelector = () => {
                 onClick={() => setShowTree((prev) => !prev)}
                 style={{
                     position: 'absolute',
-                    top: '190px',
-                    right: '10px',
+                    top: '20px',
+                    right: '20px',
                     zIndex: 998,
                     height: '50px',
                     width: '50px',
