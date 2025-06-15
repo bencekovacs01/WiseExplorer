@@ -48,6 +48,10 @@ const Selector = () => {
         bitonicEW: any | null;
         bitonicSN: any | null;
         bitonicNS: any | null;
+        bitonicCW: any | null; // Clockwise
+        bitonicCCW: any | null; // Counter-clockwise
+        bitonicIO: any | null; // Inside-Out
+        bitonicOI: any | null; // Outside-In
         branchAndBound: any | null;
         dynamicProgramming: any | null;
     }>({
@@ -57,10 +61,13 @@ const Selector = () => {
         bitonicEW: null,
         bitonicSN: null,
         bitonicNS: null,
+        bitonicCW: null,
+        bitonicCCW: null,
+        bitonicIO: null,
+        bitonicOI: null,
         branchAndBound: null,
         dynamicProgramming: null,
     });
-    console.log('performanceData', performanceData);
 
     const handleAreaSelect = (e: any) => {
         setIsLoading(true);
@@ -353,10 +360,10 @@ const Selector = () => {
         }
         setRunningAlgo('branch-and-bound');
         setIsLoading(true);
-        
+
         // Start client-side timing
         const clientStartTime = performance.now();
-        
+
         try {
             const response = await fetch('/api/pois/bab', {
                 method: 'POST',
@@ -374,14 +381,14 @@ const Selector = () => {
             }
             const result = await response.json();
             console.log('Branch and Bound result', result);
-            
+
             // Calculate client-side metrics
             const clientEndTime = performance.now();
             const clientTotalTime = clientEndTime - clientStartTime;
-            
+
             // Extract the route and metrics
             const route = result.route?.[0];
-            
+
             // Store performance data
             setPerformanceData((prev) => ({
                 ...prev,
@@ -395,10 +402,7 @@ const Selector = () => {
                 },
             }));
 
-            const positions = transformRouteToPositions(
-                route,
-                poiData.pois,
-            );
+            const positions = transformRouteToPositions(route, poiData.pois);
             console.log('positions', positions);
             setPois(positions);
         } catch (error) {
@@ -408,7 +412,7 @@ const Selector = () => {
             setRunningAlgo(null);
         }
     };
-    
+
     const calculateDynamicProgrammingRoute = async () => {
         if (!poiData || !poiData.pois || !poiData.poiMetadata) {
             console.error('No POI data available to calculate route');
@@ -416,10 +420,10 @@ const Selector = () => {
         }
         setRunningAlgo('dynamic-programming');
         setIsLoading(true);
-        
+
         // Start client-side timing
         const clientStartTime = performance.now();
-        
+
         try {
             const response = await fetch('/api/pois/dp', {
                 method: 'POST',
@@ -437,15 +441,15 @@ const Selector = () => {
             }
             const result = await response.json();
             console.log('Dynamic Programming result', result);
-            
+
             // Calculate client-side metrics
             const clientEndTime = performance.now();
             const clientTotalTime = clientEndTime - clientStartTime;
-            
+
             // Extract the route and metrics
             const route = result.route?.[0];
-            console.log('route', route)
-            
+            console.log('route', route);
+
             // Store performance data
             setPerformanceData((prev) => ({
                 ...prev,
@@ -459,10 +463,7 @@ const Selector = () => {
                 },
             }));
 
-            const positions = transformRouteToPositions(
-                route,
-                poiData.pois,
-            );
+            const positions = transformRouteToPositions(route, poiData.pois);
             console.log('positions', positions);
             setPois(positions);
         } catch (error) {
@@ -572,6 +573,96 @@ const Selector = () => {
             const nsEndTime = performance.now();
             const nsTotalTime = nsEndTime - nsStartTime;
 
+            // Calculate Clockwise (CW) variation
+            const cwStartTime = performance.now();
+            const cwResponse = await fetch('/api/pois/bitonic-time', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    pois: poiData.pois,
+                    poiMetadata: poiData.poiMetadata,
+                    strategy: SortStrategy.CLOCKWISE,
+                }),
+            });
+
+            if (!cwResponse.ok) {
+                throw new Error('Error calculating Clockwise bitonic route');
+            }
+
+            const cwResult = await cwResponse.json();
+            const cwEndTime = performance.now();
+            const cwTotalTime = cwEndTime - cwStartTime;
+
+            // Calculate Counter-Clockwise (CCW) variation
+            const ccwStartTime = performance.now();
+            const ccwResponse = await fetch('/api/pois/bitonic-time', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    pois: poiData.pois,
+                    poiMetadata: poiData.poiMetadata,
+                    strategy: SortStrategy.COUNTERCLOCKWISE,
+                }),
+            });
+
+            if (!ccwResponse.ok) {
+                throw new Error(
+                    'Error calculating Counter-Clockwise bitonic route',
+                );
+            }
+
+            const ccwResult = await ccwResponse.json();
+            const ccwEndTime = performance.now();
+            const ccwTotalTime = ccwEndTime - ccwStartTime;
+
+            // Calculate Inside-Out (IO) variation
+            const ioStartTime = performance.now();
+            const ioResponse = await fetch('/api/pois/bitonic-time', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    pois: poiData.pois,
+                    poiMetadata: poiData.poiMetadata,
+                    strategy: SortStrategy.INSIDE_OUT,
+                }),
+            });
+
+            if (!ioResponse.ok) {
+                throw new Error('Error calculating Inside-Out bitonic route');
+            }
+
+            const ioResult = await ioResponse.json();
+            const ioEndTime = performance.now();
+            const ioTotalTime = ioEndTime - ioStartTime;
+
+            // Calculate Outside-In (OI) variation
+            const oiStartTime = performance.now();
+            const oiResponse = await fetch('/api/pois/bitonic-time', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    pois: poiData.pois,
+                    poiMetadata: poiData.poiMetadata,
+                    strategy: SortStrategy.OUTSIDE_IN,
+                }),
+            });
+
+            if (!oiResponse.ok) {
+                throw new Error('Error calculating Outside-In bitonic route');
+            }
+
+            const oiResult = await oiResponse.json();
+            const oiEndTime = performance.now();
+            const oiTotalTime = oiEndTime - oiStartTime;
+
             // Store all performance metrics with individual total times
             setPerformanceData((prev) => ({
                 ...prev,
@@ -611,8 +702,43 @@ const Selector = () => {
                     routeVisitTime: nsResult.route.visitTime,
                     routeTotalTime: nsResult.route.totalTime,
                 },
+                bitonicCW: {
+                    ...cwResult.metrics,
+                    clientTotalTime: cwTotalTime,
+                    strategy: 'CLOCKWISE',
+                    routeDistance: cwResult.route.totalDistance,
+                    routeDuration: cwResult.route.duration,
+                    routeVisitTime: cwResult.route.visitTime,
+                    routeTotalTime: cwResult.route.totalTime,
+                },
+                bitonicCCW: {
+                    ...ccwResult.metrics,
+                    clientTotalTime: ccwTotalTime,
+                    strategy: 'COUNTERCLOCKWISE',
+                    routeDistance: ccwResult.route.totalDistance,
+                    routeDuration: ccwResult.route.duration,
+                    routeVisitTime: ccwResult.route.visitTime,
+                    routeTotalTime: ccwResult.route.totalTime,
+                },
+                bitonicIO: {
+                    ...ioResult.metrics,
+                    clientTotalTime: ioTotalTime,
+                    strategy: 'INSIDE_OUT',
+                    routeDistance: ioResult.route.totalDistance,
+                    routeDuration: ioResult.route.duration,
+                    routeVisitTime: ioResult.route.visitTime,
+                    routeTotalTime: ioResult.route.totalTime,
+                },
+                bitonicOI: {
+                    ...oiResult.metrics,
+                    clientTotalTime: oiTotalTime,
+                    strategy: 'OUTSIDE_IN',
+                    routeDistance: oiResult.route.totalDistance,
+                    routeDuration: oiResult.route.duration,
+                    routeVisitTime: oiResult.route.visitTime,
+                    routeTotalTime: oiResult.route.totalTime,
+                },
             }));
-
             // const bestStrategy = getBestBitonicStrategy();
             // let bestRoute;
 
@@ -652,19 +778,35 @@ const Selector = () => {
         const strategies = [
             {
                 strategy: SortStrategy.WEST_TO_EAST,
-                time: performanceData.bitonicWE?.executionTimeMs,
+                time: performanceData.bitonicWE?.routeTotalTime,
             },
             {
                 strategy: SortStrategy.EAST_TO_WEST,
-                time: performanceData.bitonicEW?.executionTimeMs,
+                time: performanceData.bitonicEW?.routeTotalTime,
             },
             {
                 strategy: SortStrategy.SOUTH_TO_NORTH,
-                time: performanceData.bitonicSN?.executionTimeMs,
+                time: performanceData.bitonicSN?.routeTotalTime,
             },
             {
                 strategy: SortStrategy.NORTH_TO_SOUTH,
-                time: performanceData.bitonicNS?.executionTimeMs,
+                time: performanceData.bitonicNS?.routeTotalTime,
+            },
+            {
+                strategy: SortStrategy.CLOCKWISE,
+                time: performanceData.bitonicCW?.routeTotalTime,
+            },
+            {
+                strategy: SortStrategy.COUNTERCLOCKWISE,
+                time: performanceData.bitonicCCW?.routeTotalTime,
+            },
+            {
+                strategy: SortStrategy.INSIDE_OUT,
+                time: performanceData.bitonicIO?.routeTotalTime,
+            },
+            {
+                strategy: SortStrategy.OUTSIDE_IN,
+                time: performanceData.bitonicOI?.routeTotalTime,
             },
         ].filter((s) => s.time !== undefined);
 
@@ -672,7 +814,7 @@ const Selector = () => {
             return SortStrategy.WEST_TO_EAST; // Default if no data
         }
 
-        // Sort by execution time (fastest first)
+        // Sort by total route time (fastest first)
         strategies.sort((a, b) => (a.time || Infinity) - (b.time || Infinity));
         return strategies[0].strategy;
     };
@@ -749,13 +891,16 @@ const Selector = () => {
                                 Branch & Bound Route
                             </Button>
                         </Tooltip>
-                        
+
                         <Tooltip title="Find route using Dynamic Programming algorithm">
                             <Button
                                 variant="contained"
                                 color="secondary"
                                 onClick={calculateDynamicProgrammingRoute}
-                                disabled={runningAlgo !== null || poiData?.pois?.length > 20}
+                                disabled={
+                                    runningAlgo !== null ||
+                                    poiData?.pois?.length > 20
+                                }
                             >
                                 Dynamic Programming Route
                             </Button>
@@ -906,6 +1051,150 @@ const Selector = () => {
                                     }
                                 >
                                     N→S
+                                </Button>
+                            </Tooltip>
+                            <Tooltip title="Clockwise strategy">
+                                <Button
+                                    onClick={() =>
+                                        calculateBitonicRoute(
+                                            SortStrategy.CLOCKWISE,
+                                        )
+                                    }
+                                    disabled={runningAlgo !== null}
+                                    color={
+                                        performanceData.bitonicCW
+                                            ?.routeTotalTime ===
+                                        Math.min(
+                                            performanceData.bitonicWE
+                                                ?.routeTotalTime || Infinity,
+                                            performanceData.bitonicEW
+                                                ?.routeTotalTime || Infinity,
+                                            performanceData.bitonicSN
+                                                ?.routeTotalTime || Infinity,
+                                            performanceData.bitonicNS
+                                                ?.routeTotalTime || Infinity,
+                                            performanceData.bitonicCW
+                                                ?.routeTotalTime || Infinity,
+                                            performanceData.bitonicCCW
+                                                ?.routeTotalTime || Infinity,
+                                            performanceData.bitonicIO
+                                                ?.routeTotalTime || Infinity,
+                                            performanceData.bitonicOI
+                                                ?.routeTotalTime || Infinity,
+                                        )
+                                            ? 'primary'
+                                            : 'inherit'
+                                    }
+                                >
+                                    CW
+                                </Button>
+                            </Tooltip>
+                            <Tooltip title="Counter-clockwise strategy">
+                                <Button
+                                    onClick={() =>
+                                        calculateBitonicRoute(
+                                            SortStrategy.COUNTERCLOCKWISE,
+                                        )
+                                    }
+                                    disabled={runningAlgo !== null}
+                                    color={
+                                        performanceData.bitonicCCW
+                                            ?.routeTotalTime ===
+                                        Math.min(
+                                            performanceData.bitonicWE
+                                                ?.routeTotalTime || Infinity,
+                                            performanceData.bitonicEW
+                                                ?.routeTotalTime || Infinity,
+                                            performanceData.bitonicSN
+                                                ?.routeTotalTime || Infinity,
+                                            performanceData.bitonicNS
+                                                ?.routeTotalTime || Infinity,
+                                            performanceData.bitonicCW
+                                                ?.routeTotalTime || Infinity,
+                                            performanceData.bitonicCCW
+                                                ?.routeTotalTime || Infinity,
+                                            performanceData.bitonicIO
+                                                ?.routeTotalTime || Infinity,
+                                            performanceData.bitonicOI
+                                                ?.routeTotalTime || Infinity,
+                                        )
+                                            ? 'primary'
+                                            : 'inherit'
+                                    }
+                                >
+                                    CCW
+                                </Button>
+                            </Tooltip>
+                            <Tooltip title="Inside-Out strategy">
+                                <Button
+                                    onClick={() =>
+                                        calculateBitonicRoute(
+                                            SortStrategy.INSIDE_OUT,
+                                        )
+                                    }
+                                    disabled={runningAlgo !== null}
+                                    color={
+                                        performanceData.bitonicIO
+                                            ?.routeTotalTime ===
+                                        Math.min(
+                                            performanceData.bitonicWE
+                                                ?.routeTotalTime || Infinity,
+                                            performanceData.bitonicEW
+                                                ?.routeTotalTime || Infinity,
+                                            performanceData.bitonicSN
+                                                ?.routeTotalTime || Infinity,
+                                            performanceData.bitonicNS
+                                                ?.routeTotalTime || Infinity,
+                                            performanceData.bitonicCW
+                                                ?.routeTotalTime || Infinity,
+                                            performanceData.bitonicCCW
+                                                ?.routeTotalTime || Infinity,
+                                            performanceData.bitonicIO
+                                                ?.routeTotalTime || Infinity,
+                                            performanceData.bitonicOI
+                                                ?.routeTotalTime || Infinity,
+                                        )
+                                            ? 'primary'
+                                            : 'inherit'
+                                    }
+                                >
+                                    I→O
+                                </Button>
+                            </Tooltip>
+                            <Tooltip title="Outside-In strategy">
+                                <Button
+                                    onClick={() =>
+                                        calculateBitonicRoute(
+                                            SortStrategy.OUTSIDE_IN,
+                                        )
+                                    }
+                                    disabled={runningAlgo !== null}
+                                    color={
+                                        performanceData.bitonicOI
+                                            ?.routeTotalTime ===
+                                        Math.min(
+                                            performanceData.bitonicWE
+                                                ?.routeTotalTime || Infinity,
+                                            performanceData.bitonicEW
+                                                ?.routeTotalTime || Infinity,
+                                            performanceData.bitonicSN
+                                                ?.routeTotalTime || Infinity,
+                                            performanceData.bitonicNS
+                                                ?.routeTotalTime || Infinity,
+                                            performanceData.bitonicCW
+                                                ?.routeTotalTime || Infinity,
+                                            performanceData.bitonicCCW
+                                                ?.routeTotalTime || Infinity,
+                                            performanceData.bitonicIO
+                                                ?.routeTotalTime || Infinity,
+                                            performanceData.bitonicOI
+                                                ?.routeTotalTime || Infinity,
+                                        )
+                                            ? 'primary'
+                                            : 'inherit'
+                                    }
+                                >
+                                    O→I
                                 </Button>
                             </Tooltip>
                         </ButtonGroup>

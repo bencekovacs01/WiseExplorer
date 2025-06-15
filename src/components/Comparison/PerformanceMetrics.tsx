@@ -38,15 +38,25 @@ interface MetricsProps {
         bitonicEW: BitonicMetric | null;
         bitonicSN: BitonicMetric | null;
         bitonicNS: BitonicMetric | null;
+        bitonicCW: BitonicMetric | null; // Clockwise
+        bitonicCCW: BitonicMetric | null; // Counterclockwise
+        bitonicIO: BitonicMetric | null; // Inside-Out
+        bitonicOI: BitonicMetric | null; // Outside-In
         branchAndBound: BitonicMetric | null;
         dynamicProgramming: BitonicMetric | null;
     };
 }
 
 const PerformanceMetrics: React.FC<MetricsProps> = ({ data }) => {
-    console.log('data', data);
     const hasBitonicVariations =
-        data.bitonicWE || data.bitonicEW || data.bitonicSN || data.bitonicNS;
+        data.bitonicWE ||
+        data.bitonicEW ||
+        data.bitonicSN ||
+        data.bitonicNS ||
+        data.bitonicCW ||
+        data.bitonicCCW ||
+        data.bitonicIO ||
+        data.bitonicOI;
 
     console.log('data.backtracking', data.backtracking?.totalTime);
     if (!data.backtracking && !data.bitonic && !hasBitonicVariations) {
@@ -78,6 +88,10 @@ const PerformanceMetrics: React.FC<MetricsProps> = ({ data }) => {
             { name: 'East-West', data: data.bitonicEW },
             { name: 'South-North', data: data.bitonicSN },
             { name: 'North-South', data: data.bitonicNS },
+            { name: 'Clockwise', data: data.bitonicCW },
+            { name: 'Counter-Clockwise', data: data.bitonicCCW },
+            { name: 'Inside-Out', data: data.bitonicIO },
+            { name: 'Outside-In', data: data.bitonicOI },
         ].filter((s) => s.data);
 
         if (strategies.length === 0) return null;
@@ -199,11 +213,15 @@ const PerformanceMetrics: React.FC<MetricsProps> = ({ data }) => {
                             <Divider sx={{ my: 0.5 }} />
                             <Typography variant="body2">
                                 Total distance:{' '}
-                                {formatDistance(data?.branchAndBound?.routeDistance)}
+                                {formatDistance(
+                                    data?.branchAndBound?.routeDistance,
+                                )}
                             </Typography>
                             <Typography variant="body2">
                                 Travel time:{' '}
-                                {formatDuration(data.branchAndBound.routeDuration)}
+                                {formatDuration(
+                                    data.branchAndBound.routeDuration,
+                                )}
                             </Typography>
                             <Typography variant="body2">
                                 Visit time:{' '}
@@ -251,11 +269,15 @@ const PerformanceMetrics: React.FC<MetricsProps> = ({ data }) => {
                             <Divider sx={{ my: 0.5 }} />
                             <Typography variant="body2">
                                 Total distance:{' '}
-                                {formatDistance(data?.dynamicProgramming?.routeDistance)}
+                                {formatDistance(
+                                    data?.dynamicProgramming?.routeDistance,
+                                )}
                             </Typography>
                             <Typography variant="body2">
                                 Travel time:{' '}
-                                {formatDuration(data.dynamicProgramming.routeDuration)}
+                                {formatDuration(
+                                    data.dynamicProgramming.routeDuration,
+                                )}
                             </Typography>
                             <Typography variant="body2">
                                 Visit time:{' '}
@@ -274,9 +296,10 @@ const PerformanceMetrics: React.FC<MetricsProps> = ({ data }) => {
                 </Box>
             )}
 
-            {data.dynamicProgramming && (data.bitonic || hasBitonicVariations) && (
-                <Divider sx={{ my: 1 }} />
-            )}
+            {data.dynamicProgramming &&
+                (data.bitonic || hasBitonicVariations) && (
+                    <Divider sx={{ my: 1 }} />
+                )}
 
             {(data.bitonic || hasBitonicVariations) && (
                 <Accordion defaultExpanded>
@@ -516,6 +539,239 @@ const PerformanceMetrics: React.FC<MetricsProps> = ({ data }) => {
                                             Route total time:{' '}
                                             {formatDuration(
                                                 data.bitonicNS.routeTotalTime,
+                                            )}
+                                        </Typography>
+                                    </>
+                                )}
+                            </Box>
+                        )}
+
+                        {data.bitonicCW && (
+                            <Box mb={1}>
+                                <Typography
+                                    variant="subtitle2"
+                                    color={
+                                        bestStrategy?.name === 'Clockwise'
+                                            ? 'primary'
+                                            : 'inherit'
+                                    }
+                                >
+                                    Clockwise Strategy
+                                </Typography>
+                                <Typography variant="body2">
+                                    Server execution:{' '}
+                                    {formatTime(data.bitonicCW.executionTimeMs)}
+                                </Typography>
+                                <Typography variant="body2">
+                                    Total time:{' '}
+                                    {formatTime(data.bitonicCW.clientTotalTime)}
+                                </Typography>
+                                <Typography variant="body2">
+                                    Memory used: {data.bitonicCW.memoryUsageMB}{' '}
+                                    MB
+                                </Typography>
+
+                                {data.bitonicCW.routeDistance && (
+                                    <>
+                                        <Divider sx={{ my: 0.5 }} />
+                                        <Typography variant="body2">
+                                            Total distance:{' '}
+                                            {formatDistance(
+                                                data.bitonicCW.routeDistance,
+                                            )}
+                                        </Typography>
+                                        <Typography variant="body2">
+                                            Travel time:{' '}
+                                            {formatDuration(
+                                                data.bitonicCW.routeDuration,
+                                            )}
+                                        </Typography>
+                                        <Typography variant="body2">
+                                            Visit time:{' '}
+                                            {formatDuration(
+                                                data.bitonicCW.routeVisitTime,
+                                            )}
+                                        </Typography>
+                                        <Typography variant="body2">
+                                            Route total time:{' '}
+                                            {formatDuration(
+                                                data.bitonicCW.routeTotalTime,
+                                            )}
+                                        </Typography>
+                                    </>
+                                )}
+                            </Box>
+                        )}
+
+                        {data.bitonicCCW && (
+                            <Box mb={1}>
+                                <Typography
+                                    variant="subtitle2"
+                                    color={
+                                        bestStrategy?.name ===
+                                        'Counter-Clockwise'
+                                            ? 'primary'
+                                            : 'inherit'
+                                    }
+                                >
+                                    Counter-Clockwise Strategy
+                                </Typography>
+                                <Typography variant="body2">
+                                    Server execution:{' '}
+                                    {formatTime(
+                                        data.bitonicCCW.executionTimeMs,
+                                    )}
+                                </Typography>
+                                <Typography variant="body2">
+                                    Total time:{' '}
+                                    {formatTime(
+                                        data.bitonicCCW.clientTotalTime,
+                                    )}
+                                </Typography>
+                                <Typography variant="body2">
+                                    Memory used: {data.bitonicCCW.memoryUsageMB}{' '}
+                                    MB
+                                </Typography>
+
+                                {data.bitonicCCW.routeDistance && (
+                                    <>
+                                        <Divider sx={{ my: 0.5 }} />
+                                        <Typography variant="body2">
+                                            Total distance:{' '}
+                                            {formatDistance(
+                                                data.bitonicCCW.routeDistance,
+                                            )}
+                                        </Typography>
+                                        <Typography variant="body2">
+                                            Travel time:{' '}
+                                            {formatDuration(
+                                                data.bitonicCCW.routeDuration,
+                                            )}
+                                        </Typography>
+                                        <Typography variant="body2">
+                                            Visit time:{' '}
+                                            {formatDuration(
+                                                data.bitonicCCW.routeVisitTime,
+                                            )}
+                                        </Typography>
+                                        <Typography variant="body2">
+                                            Route total time:{' '}
+                                            {formatDuration(
+                                                data.bitonicCCW.routeTotalTime,
+                                            )}
+                                        </Typography>
+                                    </>
+                                )}
+                            </Box>
+                        )}
+
+                        {data.bitonicIO && (
+                            <Box mb={1}>
+                                <Typography
+                                    variant="subtitle2"
+                                    color={
+                                        bestStrategy?.name === 'Inside-Out'
+                                            ? 'primary'
+                                            : 'inherit'
+                                    }
+                                >
+                                    Inside-Out Strategy
+                                </Typography>
+                                <Typography variant="body2">
+                                    Server execution:{' '}
+                                    {formatTime(data.bitonicIO.executionTimeMs)}
+                                </Typography>
+                                <Typography variant="body2">
+                                    Total time:{' '}
+                                    {formatTime(data.bitonicIO.clientTotalTime)}
+                                </Typography>
+                                <Typography variant="body2">
+                                    Memory used: {data.bitonicIO.memoryUsageMB}{' '}
+                                    MB
+                                </Typography>
+
+                                {data.bitonicIO.routeDistance && (
+                                    <>
+                                        <Divider sx={{ my: 0.5 }} />
+                                        <Typography variant="body2">
+                                            Total distance:{' '}
+                                            {formatDistance(
+                                                data.bitonicIO.routeDistance,
+                                            )}
+                                        </Typography>
+                                        <Typography variant="body2">
+                                            Travel time:{' '}
+                                            {formatDuration(
+                                                data.bitonicIO.routeDuration,
+                                            )}
+                                        </Typography>
+                                        <Typography variant="body2">
+                                            Visit time:{' '}
+                                            {formatDuration(
+                                                data.bitonicIO.routeVisitTime,
+                                            )}
+                                        </Typography>
+                                        <Typography variant="body2">
+                                            Route total time:{' '}
+                                            {formatDuration(
+                                                data.bitonicIO.routeTotalTime,
+                                            )}
+                                        </Typography>
+                                    </>
+                                )}
+                            </Box>
+                        )}
+
+                        {data.bitonicOI && (
+                            <Box mb={1}>
+                                <Typography
+                                    variant="subtitle2"
+                                    color={
+                                        bestStrategy?.name === 'Outside-In'
+                                            ? 'primary'
+                                            : 'inherit'
+                                    }
+                                >
+                                    Outside-In Strategy
+                                </Typography>
+                                <Typography variant="body2">
+                                    Server execution:{' '}
+                                    {formatTime(data.bitonicOI.executionTimeMs)}
+                                </Typography>
+                                <Typography variant="body2">
+                                    Total time:{' '}
+                                    {formatTime(data.bitonicOI.clientTotalTime)}
+                                </Typography>
+                                <Typography variant="body2">
+                                    Memory used: {data.bitonicOI.memoryUsageMB}{' '}
+                                    MB
+                                </Typography>
+
+                                {data.bitonicOI.routeDistance && (
+                                    <>
+                                        <Divider sx={{ my: 0.5 }} />
+                                        <Typography variant="body2">
+                                            Total distance:{' '}
+                                            {formatDistance(
+                                                data.bitonicOI.routeDistance,
+                                            )}
+                                        </Typography>
+                                        <Typography variant="body2">
+                                            Travel time:{' '}
+                                            {formatDuration(
+                                                data.bitonicOI.routeDuration,
+                                            )}
+                                        </Typography>
+                                        <Typography variant="body2">
+                                            Visit time:{' '}
+                                            {formatDuration(
+                                                data.bitonicOI.routeVisitTime,
+                                            )}
+                                        </Typography>
+                                        <Typography variant="body2">
+                                            Route total time:{' '}
+                                            {formatDuration(
+                                                data.bitonicOI.routeTotalTime,
                                             )}
                                         </Typography>
                                     </>

@@ -17,6 +17,10 @@ export enum SortStrategy {
     EAST_TO_WEST = 'east-to-west', // E-W
     SOUTH_TO_NORTH = 'south-to-north', // S-N
     NORTH_TO_SOUTH = 'north-to-south', // N-S
+    CLOCKWISE = 'clockwise', // Circular - clockwise
+    COUNTERCLOCKWISE = 'counterclockwise', // Circular - counterclockwise
+    INSIDE_OUT = 'inside-out', // Radial - center to periphery
+    OUTSIDE_IN = 'outside-in', // Radial - periphery to center
 }
 
 /**
@@ -75,6 +79,21 @@ export class BitonicService {
         return getRouteMatrices(coordinates);
     }
 
+    private calculateCenter(pois: Coordinate[]): Coordinate {
+        const sumLat = pois.reduce((sum, poi) => sum + poi.latitude, 0);
+        const sumLon = pois.reduce((sum, poi) => sum + poi.longitude, 0);
+        return {
+            latitude: sumLat / pois.length,
+            longitude: sumLon / pois.length,
+        };
+    }
+
+    private calculateDistance(point1: Coordinate, point2: Coordinate): number {
+        const latDiff = point1.latitude - point2.latitude;
+        const lonDiff = point1.longitude - point2.longitude;
+        return Math.sqrt(latDiff * latDiff + lonDiff * lonDiff);
+    }
+
     /**
      * Finds an optimal route using the bitonic tour algorithm.
      * This method optimizes for total time (travel time + visit time).
@@ -122,6 +141,40 @@ export class BitonicService {
                 break;
             case SortStrategy.NORTH_TO_SOUTH:
                 sortedPois.sort((a, b) => b.latitude - a.latitude);
+                break;
+            case SortStrategy.CLOCKWISE:
+            case SortStrategy.COUNTERCLOCKWISE:
+                {
+                    const center = this.calculateCenter(clusteredPois);
+
+                    sortedPois.sort((a, b) => {
+                        const angleA = Math.atan2(
+                            a.latitude - center.latitude,
+                            a.longitude - center.longitude,
+                        );
+                        const angleB = Math.atan2(
+                            b.latitude - center.latitude,
+                            b.longitude - center.longitude,
+                        );
+                        return sortStrategy === SortStrategy.CLOCKWISE
+                            ? angleA - angleB
+                            : angleB - angleA;
+                    });
+                }
+                break;
+            case SortStrategy.INSIDE_OUT:
+            case SortStrategy.OUTSIDE_IN:
+                {
+                    const center = this.calculateCenter(clusteredPois);
+
+                    sortedPois.sort((a, b) => {
+                        const distA = this.calculateDistance(a, center);
+                        const distB = this.calculateDistance(b, center);
+                        return sortStrategy === SortStrategy.INSIDE_OUT
+                            ? distA - distB
+                            : distB - distA;
+                    });
+                }
                 break;
             case SortStrategy.WEST_TO_EAST:
             default:
@@ -338,9 +391,6 @@ export class BitonicService {
         // };
     }
 
-    /**
-     * Helper method to recursively reconstruct the bitonic path
-     */
     private reconstructBitonicPath(
         i: number,
         j: number,
@@ -364,14 +414,9 @@ export class BitonicService {
         this.reconstructBitonicPath(k, j, pois, next, route);
     }
 
-    /**
-     * Generate a unique key for a POI based on coordinates
-     */
     private getPoiKey(poi: Coordinate): string {
         return `${poi.latitude},${poi.longitude}`;
     }
-
-    // Using expandClusteredRoute from route.utils.ts
 }
 
 export default BitonicService;

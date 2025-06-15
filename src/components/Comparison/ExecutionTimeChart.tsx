@@ -18,6 +18,10 @@ interface ChartProps {
         bitonicEW: BitonicMetric | null;
         bitonicSN: BitonicMetric | null;
         bitonicNS: BitonicMetric | null;
+        bitonicCW: BitonicMetric | null; // Clockwise
+        bitonicCCW: BitonicMetric | null; // Counter-clockwise
+        bitonicIO: BitonicMetric | null; // Inside-Out
+        bitonicOI: BitonicMetric | null; // Outside-In
         branchAndBound: BitonicMetric | null;
         dynamicProgramming: BitonicMetric | null;
     };
@@ -41,6 +45,18 @@ export const ExecutionTimeChart: React.FC<ChartProps> = ({ data }) => {
                     break;
                 case 'bitonicNS':
                     name = 'N→S';
+                    break;
+                case 'bitonicCW':
+                    name = 'CW';
+                    break;
+                case 'bitonicCCW':
+                    name = 'CCW';
+                    break;
+                case 'bitonicIO':
+                    name = 'I→O';
+                    break;
+                case 'bitonicOI':
+                    name = 'O→I';
                     break;
                 case 'backtracking':
                     name = 'BT';
@@ -78,8 +94,26 @@ export const ExecutionTimeChart: React.FC<ChartProps> = ({ data }) => {
                 case 'bitonicNS':
                     name = 'N→S';
                     break;
+                case 'bitonicCW':
+                    name = 'CW';
+                    break;
+                case 'bitonicCCW':
+                    name = 'CCW';
+                    break;
+                case 'bitonicIO':
+                    name = 'I→O';
+                    break;
+                case 'bitonicOI':
+                    name = 'O→I';
+                    break;
                 case 'backtracking':
                     name = 'BT';
+                    break;
+                case 'branchAndBound':
+                    name = 'B&B';
+                    break;
+                case 'dynamicProgramming':
+                    name = 'DP';
                     break;
                 default:
                     name = key.charAt(0).toUpperCase() + key.slice(1);
@@ -107,8 +141,26 @@ export const ExecutionTimeChart: React.FC<ChartProps> = ({ data }) => {
                 case 'bitonicNS':
                     name = 'N→S';
                     break;
+                case 'bitonicCW':
+                    name = 'CW';
+                    break;
+                case 'bitonicCCW':
+                    name = 'CCW';
+                    break;
+                case 'bitonicIO':
+                    name = 'I→O';
+                    break;
+                case 'bitonicOI':
+                    name = 'O→I';
+                    break;
                 case 'backtracking':
                     name = 'BT';
+                    break;
+                case 'branchAndBound':
+                    name = 'B&B';
+                    break;
+                case 'dynamicProgramming':
+                    name = 'DP';
                     break;
                 default:
                     name = key.charAt(0).toUpperCase() + key.slice(1);
@@ -121,7 +173,6 @@ export const ExecutionTimeChart: React.FC<ChartProps> = ({ data }) => {
                     value?.routeDuration,
             };
         });
-    console.log('durationData', durationData);
 
     return (
         <Box
