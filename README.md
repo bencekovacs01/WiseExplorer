@@ -182,12 +182,12 @@ npm run https
 
 ```
 WiseExplorer/
-├── app/                          # Next.js App Router
-│   ├── [locale]/                # Internationalization
-│   └── globals.css              # Global styles
+├── app/                        # Next.js App Router
+│   ├── [locale]/               # Internationalization
+│   └── globals.css             # Global styles
 ├── src/
-│   ├── components/              # React components
-│   │   ├── Comparison/          # Algorithm comparison tools
+│   ├── components/             # React components
+│   │   ├── Comparison/         # Algorithm comparison tools
 │   │   ├── MapPage/            # Map interface
 │   │   ├── Metrics/            # Performance metrics
 │   │   └── Selector/           # POI selection tools
@@ -218,23 +218,6 @@ WiseExplorer automatically collects and analyzes:
 - **Route Distance**: Total geographical distance
 - **Algorithm Efficiency**: Execution time vs. solution quality
 
-## 🤝 Contributing
-
-We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.md) for details.
-
-### Development Workflow
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit changes (`git commit -m 'Add amazing feature'`)
-4. Push to branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-### Code Style
-- Follow TypeScript best practices
-- Use ESLint and Prettier configurations
-- Write comprehensive tests for new algorithms
-- Document complex algorithms and functions
-
 ## 📝 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
@@ -248,9 +231,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📞 Support
 
-- **Issues**: [GitHub Issues](https://github.com/yourusername/WiseExplorer/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/yourusername/WiseExplorer/discussions)
-- **Email**: your.email@example.com
+- **Issues**: [GitHub Issues](https://github.com/bencekovacs01/WiseExplorer/issues)
+- **Email**: kbence55@protonmail.com
 
 ## 🗺️ Roadmap
 
