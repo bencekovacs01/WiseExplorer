@@ -1,6 +1,7 @@
 import Coordinate from '../models/Coordinate';
 import Route from '../models/Route';
 import { orsApi } from '../utils/apiWrapper';
+import { metricsService } from './MetricsService';
 
 import CategoryDurations from '../components/CategorySelector/category_times.json';
 import axios, { AxiosInstance } from 'axios';
@@ -11,6 +12,7 @@ import {
     expandClusteredRoute,
     getRouteMatrices,
 } from '../utils/route.utils';
+import matrices from '../../matrices_output.json';
 
 export enum SortStrategy {
     WEST_TO_EAST = 'west-to-east', // Default W-E
@@ -75,9 +77,22 @@ export class BitonicService {
         distanceMatrix: number[][];
         durationMatrix: number[][];
     }> {
-        // Using shared implementation from route.utils.ts
-        return getRouteMatrices(coordinates);
+        return {
+            distanceMatrix: (matrices as any).distanceMatrix,
+            durationMatrix: (matrices as any).durationMatrix,
+        };
     }
+
+    // public async getRouteMatrices(coordinates: Coordinate[]): Promise<{
+    //     distanceMatrix: number[][];
+    //     durationMatrix: number[][];
+    // }> {
+    //     // Use static matrices from matrices_output.json
+    //     return {
+    //         distanceMatrix: (matrices as any).distanceMatrix,
+    //         durationMatrix: (matrices as any).durationMatrix,
+    //     };
+    // }
 
     private calculateCenter(pois: Coordinate[]): Coordinate {
         const sumLat = pois.reduce((sum, poi) => sum + poi.latitude, 0);
@@ -110,28 +125,75 @@ export class BitonicService {
         maxClusterDistance: number = 100,
         sortStrategy: SortStrategy = SortStrategy.WEST_TO_EAST,
     ): Promise<Route> {
+        const startTime = performance.now();
+        
+        try {
+            const result = await this.findBitonicRouteInternal(
+                pois,
+                poiMetadata,
+                maxClusterDistance,
+                sortStrategy
+            );
+            
+            const endTime = performance.now();
+            const executionTime = endTime - startTime;
+            
+            // Record metrics
+            metricsService.recordMetric({
+                algorithmName: 'Bitonic',
+                variant: sortStrategy,
+                nodeCount: pois.length,
+                executionTimeMs: executionTime,
+                routeDistance: result.totalDistance,
+                routeDuration: result.duration,
+                routeVisitTime: result.visitTime,
+                routeTotalTime: result.totalTime,
+                timestamp: Date.now()
+            });
+            
+            return result;
+        } catch (error) {
+            const endTime = performance.now();
+            const executionTime = endTime - startTime;
+            
+            // Record failed attempt
+            metricsService.recordMetric({
+                algorithmName: 'Bitonic',
+                variant: sortStrategy,
+                nodeCount: pois.length,
+                executionTimeMs: executionTime,
+                timestamp: Date.now()
+            });
+            
+            throw error;
+        }
+    }
+
+    private async findBitonicRouteInternal(
+        pois: Coordinate[],
+        poiMetadata?: IPoiData[],
+        maxClusterDistance: number = 100,
+        sortStrategy: SortStrategy = SortStrategy.WEST_TO_EAST,
+    ): Promise<Route> {
         if (pois.length < 2) {
             throw new Error(
                 'At least start and end points are required for route calculation',
             );
         }
 
-        // Cluster nearby POIs for efficiency
         const { clusteredPois, clusteredMetadata } = clusterNearbyPOIs(
             pois,
             maxClusterDistance,
             poiMetadata,
         );
 
-        // Get distance and duration matrices
         const { distanceMatrix, durationMatrix } = await this.getRouteMatrices(
             clusteredPois,
         );
+        // console.log('durationMatrix', durationMatrix.length, clusteredPois.length);
 
-        // Create a copy for sorting
         const sortedPois = [...clusteredPois];
 
-        // Sort based on selected strategy
         switch (sortStrategy) {
             case SortStrategy.EAST_TO_WEST:
                 sortedPois.sort((a, b) => b.longitude - a.longitude);
@@ -182,7 +244,6 @@ export class BitonicService {
                 break;
         }
 
-        // Create index mapping from sorted to original
         const sortedToOriginalIndex = new Map<string, number>();
         sortedPois.forEach((poi, index) => {
             const originalIndex = clusteredPois.findIndex(
@@ -190,10 +251,17 @@ export class BitonicService {
                     origPoi.latitude === poi.latitude &&
                     origPoi.longitude === poi.longitude,
             );
-            sortedToOriginalIndex.set(this.getPoiKey(poi), originalIndex);
+            if (originalIndex === -1) {
+                console.warn(
+                    `POI not found in clusteredPois: ${poi.latitude},${poi.longitude}`,
+                );
+            }
+            sortedToOriginalIndex.set(
+                this.getPoiKey(poi),
+                originalIndex === -1 ? index : originalIndex,
+            );
         });
 
-        // Create distance matrix
         const n = sortedPois.length;
         const dp: number[][] = Array(n)
             .fill(0)
@@ -202,11 +270,9 @@ export class BitonicService {
             .fill(0)
             .map(() => Array(n).fill(-1));
 
-        // Initialize base cases
         for (let i = 0; i < n; i++) {
             dp[i][i] = 0;
             if (i < n - 1) {
-                // Use duration matrix instead of distance matrix for optimization
                 const origI =
                     sortedToOriginalIndex.get(this.getPoiKey(sortedPois[i])) ||
                     i;
@@ -215,18 +281,34 @@ export class BitonicService {
                         this.getPoiKey(sortedPois[i + 1]),
                     ) || i + 1;
 
-                // Calculate total time: travel time + visit time
+                // console.log(
+                //     'durationMatrix',
+                //     origI,
+                //     origJ,
+                //     durationMatrix[origI]?.[origJ],
+                // );
+                if (
+                    origI === undefined ||
+                    origJ === undefined ||
+                    origI < 0 ||
+                    origJ < 0 ||
+                    durationMatrix[origI] === undefined ||
+                    durationMatrix[origI][origJ] === undefined
+                ) {
+                    throw new Error(
+                        `Invalid index: origI=${origI}, origJ=${origJ}`,
+                    );
+                }
+
                 let combinedTime = durationMatrix[origI][origJ];
 
-                // Add visit time for middle point (not for start/end if this is a 2-point path)
-                // No visit time for destination point
                 const metadata = clusteredMetadata[origJ];
                 if (metadata) {
                     const visitDuration = this.getVisitDuration(
                         metadata.category,
                         metadata.subCategory,
                     );
-                    combinedTime += visitDuration * 60; // Convert minutes to seconds
+                    combinedTime += visitDuration * 60;
                 }
 
                 dp[i][i + 1] = combinedTime;
@@ -234,14 +316,11 @@ export class BitonicService {
             }
         }
 
-        // Dynamic programming to build the bitonic tour optimized for total time
         for (let l = 3; l <= n; l++) {
             for (let i = 0; i <= n - l; i++) {
                 const j = i + l - 1;
 
-                // Try all possible connections from i to j
                 for (let k = i + 1; k < j; k++) {
-                    // Use travel time + visit time for optimization
                     const origK =
                         sortedToOriginalIndex.get(
                             this.getPoiKey(sortedPois[k]),
@@ -251,11 +330,8 @@ export class BitonicService {
                             this.getPoiKey(sortedPois[j]),
                         ) || j;
 
-                    // Calculate travel time between these points
                     let travelTime = durationMatrix[origK][origJ];
 
-                    // Add visit time for the destination point (if not the final destination)
-                    // No visit time for the very last point in the tour
                     let totalTime = dp[i][k] + travelTime;
                     if (j < n - 1) {
                         const metadata = clusteredMetadata[origJ];
@@ -264,7 +340,7 @@ export class BitonicService {
                                 metadata.category,
                                 metadata.subCategory,
                             );
-                            totalTime += visitDuration * 60; // Convert minutes to seconds
+                            totalTime += visitDuration * 60;
                         }
                     }
 
@@ -276,7 +352,6 @@ export class BitonicService {
             }
         }
 
-        // Reconstruct the route
         const route: Coordinate[] = [];
         this.reconstructBitonicPath(
             0,
@@ -286,7 +361,6 @@ export class BitonicService {
             route,
         );
 
-        // Ensure start and end points are preserved
         if (
             route[0].latitude !== clusteredPois[0].latitude ||
             route[0].longitude !== clusteredPois[0].longitude
@@ -303,18 +377,15 @@ export class BitonicService {
             route.push(clusteredPois[clusteredPois.length - 1]);
         }
 
-        // Calculate total distance and time
         let travelDuration = 0;
         let visitTime = 0;
 
-        // Create a mapping of coordinates to their indices in the clusteredPois array
         const coordToIndex = new Map<string, number>();
         clusteredPois.forEach((poi, index) => {
             const key = `${poi.latitude},${poi.longitude}`;
             coordToIndex.set(key, index);
         });
 
-        // Transform route into indices for matrix calculations
         const routeIndices = route
             .map((point) => {
                 const key = `${point.latitude},${point.longitude}`;
@@ -322,14 +393,12 @@ export class BitonicService {
             })
             .filter((index) => index !== -1);
 
-        // Use the shared utility to calculate total distance
         const totalDistance = calculateRouteMetric(
             route,
             distanceMatrix,
             coordToIndex,
         );
 
-        // Calculate travel duration
         for (let i = 0; i < route.length - 1; i++) {
             const key1 = `${route[i].latitude},${route[i].longitude}`;
             const key2 = `${route[i + 1].latitude},${route[i + 1].longitude}`;
@@ -347,37 +416,31 @@ export class BitonicService {
             }
 
             if (i < route.length - 1) {
-                // Don't add visit time for the last point (destination)
                 const metadata = clusteredMetadata[origI];
                 if (metadata) {
                     const duration = this.getVisitDuration(
                         metadata.category,
                         metadata.subCategory,
                     );
-                    visitTime += duration * 60; // Convert minutes to seconds
+                    visitTime += duration * 60;
                 }
             }
         }
 
-        // Add visit time for current POI
-
-        console.log('totalDistance', totalDistance);
         const totalTime = travelDuration + visitTime;
-        // Create the route object with all metrics
         const bitonicRoute = new Route(
             route,
             totalDistance,
-            travelDuration, // Travel duration in seconds
-            visitTime / 60, // Visit time in minutes for reporting
-            totalTime / 60, // Total time in minutes
+            travelDuration,
+            visitTime / 60,
+            totalTime / 60,
         );
 
-        // Expand the route to include all original POIs
         const expandedRoute = expandClusteredRoute(
             bitonicRoute,
             clusteredMetadata,
             pois,
-            true, // Use point-based matching
+            true,
         );
 
         return expandedRoute;

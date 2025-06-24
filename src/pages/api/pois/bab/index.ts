@@ -34,13 +34,9 @@ export default async function handler(
                 ),
             `BranchAndBound`,
             pois.length,
-        );        console.log(`BranchAndBound execution metrics:`, metrics);
-        console.log('route', route);
-        
-        // Add additional properties to metrics that are expected by the frontend
-        // This ensures consistent format with other algorithms
+        );
         metrics.algorithm = 'branchAndBound';
-        
+
         return res.status(200).json({
             route,
             metrics,

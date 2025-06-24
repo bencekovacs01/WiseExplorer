@@ -29,7 +29,6 @@ export default async function handler(
             'backtracking',
             pois.length
         );
-        console.log('route', route)
         
         return res.status(200).json({
             route,

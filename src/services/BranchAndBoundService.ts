@@ -2,13 +2,17 @@ import axios, { AxiosInstance } from 'axios';
 import Coordinate from '../models/Coordinate';
 import Route from '../models/Route';
 import { IPoiData } from '../models/models';
+import { metricsService } from './MetricsService';
 
 import CategoryDurations from '../components/CategorySelector/category_times.json';
 import { clusterNearbyPOIs } from '../utils/cluster.utils';
 import {
     calculateRouteMetric,
+    getRouteMatrices,
     expandClusteredRoute,
 } from '../utils/route.utils';
+import matrices from '../../matrices_output.json';
+import { write } from 'fs';
 
 /**
  * Interface representing a node in the branch and bound tree
@@ -56,9 +60,45 @@ class BranchAndBoundService {
         poiMetadata?: IPoiData[],
         maxClusterDistance: number = 100,
     ): Promise<Route[]> {
-        return [
-            await this.findOptimalRoute(pois, poiMetadata, maxClusterDistance),
-        ];
+        const startTime = performance.now();
+
+        try {
+            const result = await this.findOptimalRoute(
+                pois,
+                poiMetadata,
+                maxClusterDistance,
+            );
+
+            const endTime = performance.now();
+            const executionTime = endTime - startTime;
+
+            // Record metrics
+            metricsService.recordMetric({
+                algorithmName: 'BranchAndBound',
+                nodeCount: pois.length,
+                executionTimeMs: executionTime,
+                routeDistance: result.totalDistance,
+                routeDuration: result.duration,
+                routeVisitTime: result.visitTime,
+                routeTotalTime: result.totalTime,
+                timestamp: Date.now(),
+            });
+
+            return [result];
+        } catch (error) {
+            const endTime = performance.now();
+            const executionTime = endTime - startTime;
+
+            // Record failed attempt
+            metricsService.recordMetric({
+                algorithmName: 'BranchAndBound',
+                nodeCount: pois.length,
+                executionTimeMs: executionTime,
+                timestamp: Date.now(),
+            });
+
+            throw error;
+        }
     }
 
     /**
@@ -72,17 +112,47 @@ class BranchAndBoundService {
         poiMetadata?: IPoiData[],
         maxClusterDistance: number = 100,
     ): Promise<Route> {
-        // Cluster nearby POIs
         const { clusteredPois, clusteredMetadata } = clusterNearbyPOIs(
             pois,
             maxClusterDistance,
             poiMetadata,
         );
 
-        // Get distance and duration matrices
         const matrices = await this.getRouteMatrices(clusteredPois);
+        console.log('clusteredPois', clusteredPois)
+        console.log('matrices', matrices)
+
+        // return;
+
         const distanceMatrix = matrices.distanceMatrix;
         const durationMatrix = matrices.durationMatrix;
+
+        // const fs = await import('fs');
+        // const path = await import('path');
+        // const outputPath = path.resolve(process.cwd(), 'matrices_output.json');
+        // const matricesData = {
+        //     distanceMatrix,
+        //     durationMatrix,
+        // };
+        // fs.writeFileSync(
+        //     outputPath,
+        //     JSON.stringify(matricesData, null, 2),
+        //     'utf-8',
+        // );
+        // console.log(`Matrices written to ${outputPath}`);
+
+        // return null;
+
+        // Write matrices to a file for debugging
+        // const fs = await import('fs');
+        // const path = await import('path');
+        // const outputPath = path.resolve(process.cwd(), 'matrices_output.json');
+        // const matricesData = {
+        //     distanceMatrix,
+        //     durationMatrix,
+        // };
+        // fs.writeFileSync(outputPath, JSON.stringify(matricesData, null, 2), 'utf-8');
+        // console.log(`Matrices written to ${outputPath}`);
 
         const n = clusteredPois.length;
 
@@ -92,32 +162,26 @@ class BranchAndBoundService {
                 clusteredPois,
                 n === 2 ? distanceMatrix[0][1] : 0,
             );
+            route.duration = durationMatrix[0][1] ?? 0;
 
-            // Add duration metrics
-            if (n === 2) {
-                route.duration = durationMatrix[0][1];
-
-                // Calculate visit time for any POIs (excluding start/end)
-                let visitTime = 0;
-                if (clusteredMetadata && clusteredMetadata.length > 0) {
-                    for (let i = 1; i < clusteredMetadata.length - 1; i++) {
-                        const metadata = clusteredMetadata[i];
-                        if (metadata && metadata.clusteredIds) {
-                            for (const origPOIIndex of metadata.clusteredIds) {
-                                const origMetadata =
-                                    poiMetadata?.[origPOIIndex];
-                                visitTime += this.getVisitDuration(
-                                    origMetadata?.category,
-                                    origMetadata?.subCategory,
-                                );
-                            }
+            // Calculate visit time for any POIs (excluding start/end)
+            let visitTime = 0;
+            if (clusteredMetadata && clusteredMetadata.length > 0) {
+                for (let i = 1; i < clusteredMetadata.length - 1; i++) {
+                    const metadata = clusteredMetadata[i];
+                    if (metadata && metadata.clusteredIds) {
+                        for (const origPOIIndex of metadata.clusteredIds) {
+                            const origMetadata = poiMetadata?.[origPOIIndex];
+                            visitTime += this.getVisitDuration(
+                                origMetadata?.category,
+                                origMetadata?.subCategory,
+                            );
                         }
                     }
                 }
-                route.visitTime = visitTime;
-                route.totalTime = route.duration + visitTime * 60; // Convert minutes to seconds for totalTime
             }
-
+            route.visitTime = visitTime;
+            route.totalTime = (route.duration ?? 0) + visitTime * 60; // Convert minutes to seconds for totalTime
             return route;
         }
 
@@ -357,34 +421,26 @@ class BranchAndBoundService {
      * @param coordinates Array of coordinates to calculate matrices for
      * @returns An object containing distance and duration matrices
      */
-    private async getRouteMatrices(coordinates: Coordinate[]): Promise<{
+    // private async getRouteMatrices(coordinates: Coordinate[]): Promise<{
+    //     distanceMatrix: number[][];
+    //     durationMatrix: number[][];
+    // }> {
+    //     // Use static matrices from matrices_output.json
+    //     return {
+    //         distanceMatrix: (matrices as any).distanceMatrix,
+    //         durationMatrix: (matrices as any).durationMatrix,
+    //     };
+    // }
+
+    public async getRouteMatrices(coordinates: Coordinate[]): Promise<{
         distanceMatrix: number[][];
         durationMatrix: number[][];
     }> {
-        const payloadCoords = coordinates.map((coord) => [
-            coord.longitude,
-            coord.latitude,
-        ]);
-        const jsonContent = {
-            locations: payloadCoords,
-            metrics: ['distance', 'duration'],
-        };
-
-        const response = await this.client
-            .post(this.matrixBaseUrl, jsonContent, {
-                headers: {
-                    Authorization: this.ORS_KEY,
-                    'Content-Type': 'application/json',
-                },
-            })
-            .catch((error) => {
-                console.error('Matrix_error:', error?.response?.data);
-                throw new Error(`Matrix_error: ${error?.response?.data}`);
-            });
-
+        // return getRouteMatrices(coordinates);
+        // Use static matrices from matrices_output.json
         return {
-            distanceMatrix: response.data.distances,
-            durationMatrix: response.data.durations,
+            distanceMatrix: (matrices as any).distanceMatrix,
+            durationMatrix: (matrices as any).durationMatrix,
         };
     }
 

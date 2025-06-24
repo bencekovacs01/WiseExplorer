@@ -23,12 +23,6 @@ export default async function handler(
             });
         }
 
-        if (pois.length > 20) {
-            return res.status(400).json({
-                error: 'Dynamic Programming algorithm is limited to 20 points due to computational complexity.',
-            });
-        }
-
         const dpService = new DynamicProgrammingService();
 
         const { result: route, metrics } = await measurePerformance(
@@ -41,12 +35,8 @@ export default async function handler(
             `DynamicProgramming`,
             pois.length,
         );
-        
-        console.log(`DynamicProgramming execution metrics:`, metrics);
-        console.log('route', route);
-        
         metrics.algorithm = 'dynamicProgramming';
-        
+
         return res.status(200).json({
             route,
             metrics,

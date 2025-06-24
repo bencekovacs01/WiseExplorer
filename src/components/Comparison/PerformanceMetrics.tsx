@@ -58,7 +58,6 @@ const PerformanceMetrics: React.FC<MetricsProps> = ({ data }) => {
         data.bitonicIO ||
         data.bitonicOI;
 
-    console.log('data.backtracking', data.backtracking?.totalTime);
     if (!data.backtracking && !data.bitonic && !hasBitonicVariations) {
         return null;
     }

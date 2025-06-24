@@ -39,8 +39,6 @@ export default async function handler(
             pois.length,
         );
 
-        console.log(`Bitonic ${strategy} execution metrics:`, metrics);
-
         return res.status(200).json({
             route,
             metrics: {

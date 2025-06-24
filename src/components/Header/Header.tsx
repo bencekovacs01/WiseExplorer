@@ -97,6 +97,13 @@ export default function Header({
                             Map
                         </a>
                         <a
+                            hidden={onlyLogo}
+                            href="/en/metrics"
+                            className="text-white hover:text-orange-500 transition-colors"
+                        >
+                            Metrics
+                        </a>
+                        <a
                             hidden={!onlyLogo}
                             href={baseUrl}
                             className="px-4 py-2 text-center bg-orange-500 hover:bg-orange-600 transition-colors text-white font-medium rounded-lg"

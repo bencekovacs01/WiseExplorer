@@ -18,17 +18,16 @@ interface ChartProps {
         bitonicEW: BitonicMetric | null;
         bitonicSN: BitonicMetric | null;
         bitonicNS: BitonicMetric | null;
-        bitonicCW: BitonicMetric | null; // Clockwise
-        bitonicCCW: BitonicMetric | null; // Counter-clockwise
-        bitonicIO: BitonicMetric | null; // Inside-Out
-        bitonicOI: BitonicMetric | null; // Outside-In
+        bitonicCW: BitonicMetric | null;
+        bitonicCCW: BitonicMetric | null;
+        bitonicIO: BitonicMetric | null;
+        bitonicOI: BitonicMetric | null;
         branchAndBound: BitonicMetric | null;
         dynamicProgramming: BitonicMetric | null;
     };
 }
 
 export const ExecutionTimeChart: React.FC<ChartProps> = ({ data }) => {
-    console.log('data', data);
     const chartData = Object.entries(data)
         .filter(([_, value]) => value !== null)
         .map(([key, value]) => {

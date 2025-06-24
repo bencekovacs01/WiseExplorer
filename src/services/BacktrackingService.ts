@@ -4,15 +4,14 @@ import Route from '../models/Route';
 import CategoryDurations from '../components/CategorySelector/category_times.json';
 import { IPoiData } from '../models/models';
 import { clusterNearbyPOIs } from '../utils/cluster.utils';
+import { metricsService } from './MetricsService';
 import {
     calculateRouteMetric,
     expandClusteredRoute,
     getRouteMatrices,
 } from '../utils/route.utils';
+import matrices from '../../matrices_output.json';
 
-/**
- * BacktrackingService provides methods to find the optimal route among a set of points using the backtracking method.
- */
 export class BacktrackingService {
     private client: AxiosInstance = axios.create();
     private ORS_KEY: string = process.env.ORS_KEY as string;
@@ -66,6 +65,7 @@ export class BacktrackingService {
     ): Promise<Route> {
         return this.findMinimumRouteBt(pois, poiMetadata);
     }
+
     /**
      * Gets the distance and duration matrices for a set of coordinates.
      * @param coordinates Array of coordinates to calculate matrices for
@@ -75,8 +75,12 @@ export class BacktrackingService {
         distanceMatrix: number[][];
         durationMatrix: number[][];
     }> {
-        return getRouteMatrices(coordinates);
+        return {
+            distanceMatrix: (matrices as any).distanceMatrix,
+            durationMatrix: (matrices as any).durationMatrix,
+        };
     }
+
     /**
      * Finds the optimal route between points using backtracking.
      * This method optimizes for total time (travel time + visit time).
@@ -89,86 +93,114 @@ export class BacktrackingService {
         pois: Coordinate[],
         poiMetadata?: IPoiData[],
     ): Promise<Route> {
-        // Cluster nearby POIs
+        const startTime = performance.now();
+        
+        try {
+            const result = await this.findMinimumRouteBtInternal(pois, poiMetadata);
+            
+            const endTime = performance.now();
+            const executionTime = endTime - startTime;
+            
+            metricsService.recordMetric({
+                algorithmName: 'Backtracking',
+                nodeCount: pois.length,
+                executionTimeMs: executionTime,
+                routeDistance: result.totalDistance,
+                routeDuration: result.duration,
+                routeVisitTime: result.visitTime,
+                routeTotalTime: result.totalTime,
+                timestamp: Date.now()
+            });
+            
+            return result;
+        } catch (error) {
+            const endTime = performance.now();
+            const executionTime = endTime - startTime;
+            
+            metricsService.recordMetric({
+                algorithmName: 'Backtracking',
+                nodeCount: pois.length,
+                executionTimeMs: executionTime,
+                timestamp: Date.now()
+            });
+            
+            throw error;
+        }
+    }
+
+    private async findMinimumRouteBtInternal(
+        pois: Coordinate[],
+        poiMetadata?: IPoiData[],
+    ): Promise<Route> {
         const { clusteredPois, clusteredMetadata } = clusterNearbyPOIs(
             pois,
             100,
             poiMetadata,
         );
 
-        // Recalculate matrices for clustered POIs
         let clusterDistanceMatrix = [];
         let clusterDurationMatrix = [];
 
         const matrices = await this.getRouteMatrices(clusteredPois);
         clusterDistanceMatrix = matrices.distanceMatrix;
-        clusterDurationMatrix = matrices.durationMatrix; // Find optimal route using clustered POIs
+        clusterDurationMatrix = matrices.durationMatrix;
         const permutations = this.getPermutationsBt(clusteredPois);
         let minRoute: Route | null = null;
-        let minTotalDistance = Number.MAX_VALUE; // Find the route with minimum total time
+        let minTotalDistance = Number.MAX_VALUE;
         for (const permutation of permutations) {
-            // Calculate total distance for this route
             const totalDistance = calculateRouteMetric(
                 permutation,
                 clusterDistanceMatrix,
             );
 
-            // Calculate travel time and visit time to store on the route
             const travelTime = calculateRouteMetric(
                 permutation,
                 clusterDurationMatrix,
             );
 
-            // Calculate visit time at each POI
             let visitTime = 0;
             for (let i = 0; i < permutation.length; i++) {
-                // Skip calculating visit time for start and end points
                 if (i === 0 || i === permutation.length - 1) continue;
 
-                // Get the cluster metadata
-                const metadata = clusteredMetadata?.[i];                // Calculate visit time for all POIs in this cluster
+                const metadata = clusteredMetadata?.[i];
                 if (metadata && metadata.clusteredIds) {
                     for (const origPOIIndex of metadata.clusteredIds) {
                         const origMetadata = poiMetadata?.[origPOIIndex];
                         visitTime += this.getVisitDuration(
                             origMetadata?.category,
                             origMetadata?.subCategory,
-                        ) * 60; // Convert minutes to seconds to match duration matrix units
+                        ) * 60;
                     }
                 }
-            } // Calculate total time (travel time + visit time)
+            }
             const totalTime = travelTime + visitTime;
 
-            // Now optimizing for total time (travel + visit time)
             if (totalTime < minTotalDistance) {
-                // reusing minTotalDistance variable, but for time now
                 minTotalDistance = totalTime;
                 console.log(
                     'Found better total time route:',
                     totalTime,
                     'seconds, distance:',
                     totalDistance,
-                );                minRoute = new Route(permutation, totalDistance);
+                );
+                minRoute = new Route(permutation, totalDistance);
                 minRoute.duration = travelTime;
-                minRoute.visitTime = visitTime / 60; // Convert back to minutes for reporting
-                minRoute.totalTime = totalTime / 60; // Convert back to minutes for reporting
+                minRoute.visitTime = visitTime / 60;
+                minRoute.totalTime = totalTime / 60;
             }
         }
         if (!minRoute) {
-            // Fallback in case no route is found
             return new Route(pois, 0);
         }
-        // When returning the route, map the clustered POIs back to original POIs
-        // to preserve all points for display
         const expandedRoute = expandClusteredRoute(
             minRoute,
             clusteredMetadata,
             pois,
-            false, // Use index-based matching (default)
+            false,
         );
 
         return expandedRoute;
-    } // Using shared calculateRouteMetric from route.utils.ts
+    }
 
     /**
      * Generates all permutations of a list of coordinates using backtracking.
@@ -190,5 +222,5 @@ export class BacktrackingService {
             }
         }
         return permutations;
-    } // Using expandClusteredRoute from route.utils.ts
+    }
 }

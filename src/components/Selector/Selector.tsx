@@ -22,6 +22,8 @@ import PerformanceMetrics from '../Comparison/PerformanceMetrics';
 
 import mockPoiData from './poiData.json';
 
+import poiData100 from './poiData100.json';
+
 const Selector = () => {
     const map = useMap();
 
@@ -33,14 +35,19 @@ const Selector = () => {
 
     const [fetchPois] = usePOIStore(useShallow((state) => [state.fetchPois]));
 
-    const [poiData, setPoiData] = useState<any>(mockPoiData);
-    console.log('poiData', poiData);
+    const TOTAL = 15; // max 90
+
+    const data = {
+        pois: poiData100.pois?.slice(0, TOTAL) || [],
+        poiMetadata: poiData100.poiMetadata?.slice(0, TOTAL) || [],
+    };
+
+    const [poiData, setPoiData] = useState<any>(data);
     const [isPoiLoaded, setIsPoiLoaded] = useState<boolean>(true);
 
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [runningAlgo, setRunningAlgo] = useState<string | null>(null);
 
-    // Update performance data state to include all algorithm variations
     const [performanceData, setPerformanceData] = useState<{
         backtracking: any | null;
         bitonic: any | null;
@@ -48,10 +55,10 @@ const Selector = () => {
         bitonicEW: any | null;
         bitonicSN: any | null;
         bitonicNS: any | null;
-        bitonicCW: any | null; // Clockwise
-        bitonicCCW: any | null; // Counter-clockwise
-        bitonicIO: any | null; // Inside-Out
-        bitonicOI: any | null; // Outside-In
+        bitonicCW: any | null;
+        bitonicCCW: any | null;
+        bitonicIO: any | null;
+        bitonicOI: any | null;
         branchAndBound: any | null;
         dynamicProgramming: any | null;
     }>({
@@ -81,7 +88,7 @@ const Selector = () => {
                 latitude: e.latlng.lat,
                 longitude: e.latlng.lng,
             },
-            buffer: 500,
+            buffer: 800,
             categoryIds: Object.keys(selectedCategories)
                 .map(Number)
                 .filter((key) => selectedCategories[key]),
@@ -89,7 +96,8 @@ const Selector = () => {
                 .map(Number)
                 .filter((key) => selectedCategoryGroups[key]),
         }).then((res) => {
-            setPoiData(res);
+            // setPoiData(res);
+            console.log('res', res?.pois?.length);
             setIsPoiLoaded(true);
             setIsLoading(false);
 
@@ -302,7 +310,6 @@ const Selector = () => {
         setRunningAlgo('backtracking');
         setIsLoading(true);
 
-        // Start client-side timing
         const clientStartTime = performance.now();
 
         try {
@@ -323,13 +330,10 @@ const Selector = () => {
             }
 
             const result = await response.json();
-            console.log('Backtracking result', result);
 
-            // Calculate client-side metrics
             const clientEndTime = performance.now();
             const clientTotalTime = clientEndTime - clientStartTime;
 
-            // Store performance data
             setPerformanceData((prev) => ({
                 ...prev,
                 backtracking: {
@@ -361,7 +365,6 @@ const Selector = () => {
         setRunningAlgo('branch-and-bound');
         setIsLoading(true);
 
-        // Start client-side timing
         const clientStartTime = performance.now();
 
         try {
@@ -382,14 +385,11 @@ const Selector = () => {
             const result = await response.json();
             console.log('Branch and Bound result', result);
 
-            // Calculate client-side metrics
             const clientEndTime = performance.now();
             const clientTotalTime = clientEndTime - clientStartTime;
 
-            // Extract the route and metrics
             const route = result.route?.[0];
 
-            // Store performance data
             setPerformanceData((prev) => ({
                 ...prev,
                 branchAndBound: {
@@ -421,7 +421,6 @@ const Selector = () => {
         setRunningAlgo('dynamic-programming');
         setIsLoading(true);
 
-        // Start client-side timing
         const clientStartTime = performance.now();
 
         try {
@@ -440,17 +439,12 @@ const Selector = () => {
                 throw new Error(errorData.message || 'Error calculating route');
             }
             const result = await response.json();
-            console.log('Dynamic Programming result', result);
 
-            // Calculate client-side metrics
             const clientEndTime = performance.now();
             const clientTotalTime = clientEndTime - clientStartTime;
 
-            // Extract the route and metrics
             const route = result.route?.[0];
-            console.log('route', route);
 
-            // Store performance data
             setPerformanceData((prev) => ({
                 ...prev,
                 dynamicProgramming: {
@@ -485,7 +479,6 @@ const Selector = () => {
         setIsLoading(true);
 
         try {
-            // Calculate West to East (W-E) variation with individual timing
             const weStartTime = performance.now();
             const weResponse = await fetch('/api/pois/bitonic-time', {
                 method: 'POST',
@@ -507,7 +500,6 @@ const Selector = () => {
             const weEndTime = performance.now();
             const weTotalTime = weEndTime - weStartTime;
 
-            // Calculate East to West (E-W) variation with individual timing
             const ewStartTime = performance.now();
             const ewResponse = await fetch('/api/pois/bitonic-time', {
                 method: 'POST',
@@ -529,7 +521,6 @@ const Selector = () => {
             const ewEndTime = performance.now();
             const ewTotalTime = ewEndTime - ewStartTime;
 
-            // Calculate South to North (S-N) variation with individual timing
             const snStartTime = performance.now();
             const snResponse = await fetch('/api/pois/bitonic-time', {
                 method: 'POST',
@@ -551,7 +542,6 @@ const Selector = () => {
             const snEndTime = performance.now();
             const snTotalTime = snEndTime - snStartTime;
 
-            // Calculate North to South (N-S) variation with individual timing
             const nsStartTime = performance.now();
             const nsResponse = await fetch('/api/pois/bitonic-time', {
                 method: 'POST',
@@ -573,7 +563,6 @@ const Selector = () => {
             const nsEndTime = performance.now();
             const nsTotalTime = nsEndTime - nsStartTime;
 
-            // Calculate Clockwise (CW) variation
             const cwStartTime = performance.now();
             const cwResponse = await fetch('/api/pois/bitonic-time', {
                 method: 'POST',
@@ -595,7 +584,6 @@ const Selector = () => {
             const cwEndTime = performance.now();
             const cwTotalTime = cwEndTime - cwStartTime;
 
-            // Calculate Counter-Clockwise (CCW) variation
             const ccwStartTime = performance.now();
             const ccwResponse = await fetch('/api/pois/bitonic-time', {
                 method: 'POST',
@@ -619,7 +607,6 @@ const Selector = () => {
             const ccwEndTime = performance.now();
             const ccwTotalTime = ccwEndTime - ccwStartTime;
 
-            // Calculate Inside-Out (IO) variation
             const ioStartTime = performance.now();
             const ioResponse = await fetch('/api/pois/bitonic-time', {
                 method: 'POST',
@@ -641,7 +628,6 @@ const Selector = () => {
             const ioEndTime = performance.now();
             const ioTotalTime = ioEndTime - ioStartTime;
 
-            // Calculate Outside-In (OI) variation
             const oiStartTime = performance.now();
             const oiResponse = await fetch('/api/pois/bitonic-time', {
                 method: 'POST',
@@ -663,7 +649,6 @@ const Selector = () => {
             const oiEndTime = performance.now();
             const oiTotalTime = oiEndTime - oiStartTime;
 
-            // Store all performance metrics with individual total times
             setPerformanceData((prev) => ({
                 ...prev,
                 bitonicWE: {
@@ -898,8 +883,8 @@ const Selector = () => {
                                 color="secondary"
                                 onClick={calculateDynamicProgrammingRoute}
                                 disabled={
-                                    runningAlgo !== null ||
-                                    poiData?.pois?.length > 20
+                                    runningAlgo !== null
+                                    // ||                                    poiData?.pois?.length > 20
                                 }
                             >
                                 Dynamic Programming Route

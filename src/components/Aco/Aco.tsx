@@ -9,8 +9,11 @@ import usePOIStore from '@/src/store/poiStore';
 
 import InterestsIcon from '@mui/icons-material/Interests';
 import { useMapContext } from '@/src/contexts/MapContext';
+import { clusterNearbyPOIs } from '@/src/utils/cluster.utils';
+import { calculateHaversineDistance } from '@/src/utils/route.utils';
 
-import poiData from '../Selector/poiData.json';
+// import poiData from '../Selector/poiData.json';
+import poiData100 from '../Selector/poiData100.json';
 import distances from './distances.json';
 import ACO from '@/src/services/AcoService';
 import Coordinate from '@/src/models/Coordinate';
@@ -50,33 +53,55 @@ const AcoComponent = () => {
     //     { latitude: 46.54451, longitude: 24.59205 },
     // ];
 
-    console.log('poiData', poiData);
-    const poiList = poiData?.features.map((poi: any) => ({
-        latitude: poi?.geometry?.coordinates?.[1],
-        longitude: poi?.geometry?.coordinates?.[0],
+    console.log('poiData', poiData100);
+    // const poiList = poiData?.features.map((poi: any) => ({
+    //     latitude: poi?.geometry?.coordinates?.[1],
+    //     longitude: poi?.geometry?.coordinates?.[0],
+    // }));
+
+    const poiList = poiData100?.pois.map((poi: any) => ({
+        latitude: poi?.latitude,
+        longitude: poi?.longitude,
     }));
 
     const [data, setData] = useState<Coordinate[]>(poiList);
-    console.log('data2', data);
     // points?.map
     //     ? points.map((poi: POI) => new Coordinate(poi.lat, poi.lng))
     //     : [],
 
+    // Cluster POIs for ACO
+    const { clusteredPois } = clusterNearbyPOIs(data);
+
+    // Build clustered distance matrix
+    const clusteredDistanceMatrix = useMemo(() => {
+        return clusteredPois.map((from) =>
+            clusteredPois.map((to) =>
+                from === to
+                    ? 0
+                    : calculateHaversineDistance(
+                          from.latitude,
+                          from.longitude,
+                          to.latitude,
+                          to.longitude,
+                      ),
+            ),
+        );
+    }, [clusteredPois]);
+
     const aco = useMemo(() => {
-        if (distanceMatrix?.length === 0) return null;
+        if (clusteredDistanceMatrix?.length === 0) return null;
         return new ACO({
-            distanceMatrix,
+            distanceMatrix: clusteredDistanceMatrix,
             numAnts: 10,
             alpha: 1,
             beta: 5,
             evaporationRate: evaporationRate,
             iterations: iterations,
         });
-    }, [distanceMatrix, evaporationRate, iterations]);
+    }, [clusteredDistanceMatrix, evaporationRate, iterations]);
 
     const handleSelect = () => {
-        if (!aco || distanceMatrix?.length === 0) return;
-
+        if (!aco || clusteredDistanceMatrix?.length === 0) return;
         aco.run(
             (
                 iteration,
@@ -85,14 +110,9 @@ const AcoComponent = () => {
                 antsTours,
                 currentPheromones,
             ) => {
-                console.log(
-                    `Iteration: ${iteration}, Best Tour: ${bestTour}, Best Distance: ${bestDistance}`,
-                );
-
                 if (currentPheromones) {
                     setPheromones(currentPheromones);
                 }
-
                 if (antsTours) {
                     setAntPaths(antsTours);
                 }
@@ -100,20 +120,27 @@ const AcoComponent = () => {
         );
     };
 
-    // useEffect(() => {
-    // data.forEach((poi) => {
-    //     L.circleMarker([poi.latitude, poi.longitude], {
-    //         radius: 6,
-    //         color: 'red',
-    //         fillColor: 'red',
-    //         fillOpacity: 1,
-    //     }).addTo(map);
-    // });
+    // useEffect(
+    //     () => {
+    //         data.forEach((poi) => {
+    //             L.circleMarker([poi.latitude, poi.longitude], {
+    //                 radius: 6,
+    //                 color: 'red',
+    //                 fillColor: 'red',
+    //                 fillOpacity: 1,
+    //             }).addTo(map);
+    //         });
 
-    // loadDistanceMatrix(data).then((matrix: any) => {
-    //     setDistanceMatrix(matrix);
-    // });
-    // }, [map, data, loadDistanceMatrix]);
+    //         // loadDistanceMatrix(data).then((matrix: any) => {
+    //         //     setDistanceMatrix(matrix);
+    //         // });
+
+    //         // No cleanup needed, so return nothing
+    //     },
+    //     [
+    //         /*, loadDistanceMatrix*/
+    //     ],
+    // );
 
     const getPheromoneColor = (value: number): string => {
         const maxPheromone = 10; // Adjust based on expected max value
@@ -125,18 +152,16 @@ const AcoComponent = () => {
 
     useEffect(() => {
         if (pheromones.length === 0) return;
-
         map.eachLayer((layer) => {
             if ((layer as any).options?.isPheromone) {
                 map.removeLayer(layer);
             }
         });
-
         pheromones.forEach((row, i) => {
             row.forEach((pheromone, j) => {
                 if (i < j) {
-                    const from = data[i];
-                    const to = data[j];
+                    const from = clusteredPois[i];
+                    const to = clusteredPois[j];
                     const midpoint: LatLngLiteral = {
                         lat: (from.latitude + to.latitude) / 2,
                         lng: (from.longitude + to.longitude) / 2,
@@ -150,23 +175,20 @@ const AcoComponent = () => {
                 }
             });
         });
-    }, [pheromones, map, data]);
+    }, [pheromones, map, clusteredPois]);
 
     useEffect(() => {
         if (antPaths.length === 0) return;
-
         map.eachLayer((layer) => {
             if ((layer as any).options?.isAntPath) {
                 map.removeLayer(layer);
             }
         });
-
         antPaths.forEach((tour, antIndex) => {
             const coordinates: LatLngLiteral[] = tour.map((nodeIndex) => ({
-                lat: data[nodeIndex].latitude,
-                lng: data[nodeIndex].longitude,
+                lat: clusteredPois[nodeIndex].latitude,
+                lng: clusteredPois[nodeIndex].longitude,
             }));
-
             L.Routing.control({
                 waypoints: coordinates.map((coord) =>
                     L.latLng(coord.lat, coord.lng),
@@ -189,16 +211,16 @@ const AcoComponent = () => {
                 showAlternatives: false,
                 show: false,
                 router: L.Routing.osrmv1({
-                    serviceUrl: `http://localhost:${
-                        navigationType === 'car'
+                    serviceUrl: `http://localhost:$
+                        {navigationType === 'car'
                             ? process.env.CAR_NAV_PORT
                             : process.env.FOOT_NAV_PORT
-                    }/route/v1`,
+                        }/route/v1`,
                     language: 'en',
                 }),
             } as any).addTo(map);
         });
-    }, [antPaths, map, data, navigationType]);
+    }, [antPaths, map, clusteredPois, navigationType]);
 
     const handleOnClick = () => {
         data.forEach((poi) => {

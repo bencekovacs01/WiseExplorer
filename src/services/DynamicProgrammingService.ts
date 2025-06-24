@@ -2,10 +2,12 @@ import axios, { AxiosInstance } from 'axios';
 import Coordinate from '../models/Coordinate';
 import Route from '../models/Route';
 import { IPoiData } from '../models/models';
+import { metricsService } from './MetricsService';
 
 import CategoryDurations from '../components/CategorySelector/category_times.json';
 import { clusterNearbyPOIs } from '../utils/cluster.utils';
-import { expandClusteredRoute, getRouteMatrices } from '../utils/route.utils';
+import { expandClusteredRoute } from '../utils/route.utils';
+import matrices from '../../matrices_output.json';
 
 /**
  * DynamicProgrammingService provides methods to find the optimal route
@@ -42,9 +44,41 @@ export class DynamicProgrammingService {
         poiMetadata?: IPoiData[],
         maxClusterDistance: number = 100,
     ): Promise<Route[]> {
-        return [
-            await this.findOptimalRoute(pois, poiMetadata, maxClusterDistance),
-        ];
+        const startTime = performance.now();
+        
+        try {
+            const result = await this.findOptimalRoute(pois, poiMetadata, maxClusterDistance);
+            
+            const endTime = performance.now();
+            const executionTime = endTime - startTime;
+            
+            // Record metrics
+            metricsService.recordMetric({
+                algorithmName: 'DynamicProgramming',
+                nodeCount: pois.length,
+                executionTimeMs: executionTime,
+                routeDistance: result.totalDistance,
+                routeDuration: result.duration,
+                routeVisitTime: result.visitTime,
+                routeTotalTime: result.totalTime,
+                timestamp: Date.now()
+            });
+            
+            return [result];
+        } catch (error) {
+            const endTime = performance.now();
+            const executionTime = endTime - startTime;
+            
+            // Record failed attempt
+            metricsService.recordMetric({
+                algorithmName: 'DynamicProgramming',
+                nodeCount: pois.length,
+                executionTimeMs: executionTime,
+                timestamp: Date.now()
+            });
+            
+            throw error;
+        }
     }
 
     /**
@@ -65,9 +99,8 @@ export class DynamicProgrammingService {
             poiMetadata,
         );
 
-        const matrices = await getRouteMatrices(clusteredPois);
-        const distanceMatrix = matrices.distanceMatrix;
-        const durationMatrix = matrices.durationMatrix;
+        const distanceMatrix = (matrices as any).distanceMatrix;
+        const durationMatrix = (matrices as any).durationMatrix;
 
         const n = clusteredPois.length;
 
@@ -77,25 +110,25 @@ export class DynamicProgrammingService {
 
         if (n === 2) {
             const route = new Route(clusteredPois, distanceMatrix[0][1]);
-            route.duration = durationMatrix[0][1];
+            route.duration = durationMatrix[0][1] ?? 0;
 
-            // Calculate visit time
+            // Calculate visit time for any POIs (excluding start/end)
             let visitTime = 0;
             if (clusteredMetadata && clusteredMetadata.length > 0) {
-                const metadata = clusteredMetadata[1];
-                if (metadata && metadata.clusteredIds) {
-                    for (const origPOIIndex of metadata.clusteredIds) {
-                        const origMetadata = poiMetadata?.[origPOIIndex];
-                        visitTime += this.getVisitDuration(
-                            origMetadata?.category,
-                            origMetadata?.subCategory,
-                        );
+                for (let i = 1; i < clusteredMetadata.length - 1; i++) {
+                    const metadata = clusteredMetadata[i];
+                    if (metadata && metadata.clusteredIds) {
+                        for (const origPOIIndex of metadata.clusteredIds) {
+                            const origMetadata = poiMetadata?.[origPOIIndex];
+                            visitTime += this.getVisitDuration(
+                                origMetadata?.category,
+                                origMetadata?.subCategory,
+                            );
+                        }
                     }
                 }
             }
-
-            route.visitTime = visitTime;
-            route.totalTime = route.duration + visitTime * 60;
+            route.totalTime = (route.duration ?? 0) + visitTime * 60;
 
             return route;
         }
@@ -113,29 +146,29 @@ export class DynamicProgrammingService {
                         origMetadata?.subCategory,
                     );
                     visitTime += duration * 60;
-                    console.log(
-                        `POI ${index}, origPOI ${origPOIIndex}, category: ${
-                            origMetadata?.category
-                        }, subCategory: ${
-                            origMetadata?.subCategory
-                        }, duration: ${duration} minutes (${
-                            duration * 60
-                        } seconds)`,
-                    );
+                    // console.log(
+                    //     `POI ${index}, origPOI ${origPOIIndex}, category: ${
+                    //         origMetadata?.category
+                    //     }, subCategory: ${
+                    //         origMetadata?.subCategory
+                    //     }, duration: ${duration} minutes (${
+                    //         duration * 60
+                    //     } seconds)`,
+                    // );
                 }
             } else {
                 visitTime = this.getVisitDuration(null, null) * 60;
-                console.log(
-                    `POI ${index} has no metadata, using default duration: ${visitTime} seconds`,
-                );
+                // console.log(
+                //     `POI ${index} has no metadata, using default duration: ${visitTime} seconds`,
+                // );
             }
             return visitTime;
         });
 
-        console.log(
-            'Visit durations for all POIs (seconds):',
-            visitDurations.map((d) => `${d}s (${(d / 60).toFixed(1)}min)`),
-        );
+        // console.log(
+        //     'Visit durations for all POIs (seconds):',
+        //     visitDurations.map((d) => `${d}s (${(d / 60).toFixed(1)}min)`),
+        // );
 
         const memo = new Map<string, [number, number]>();
 
@@ -146,11 +179,11 @@ export class DynamicProgrammingService {
             const key = this.createMemoKey(mask, city);
             const totalTime = durationMatrix[0][city] + visitDurations[city];
             memo.set(key, [totalTime, 0]);
-            console.log(
-                `Base case: mask=${mask.toString(
-                    2,
-                )}, city=${city}, time=${totalTime}`,
-            );
+            // console.log(
+            //     `Base case: mask=${mask.toString(
+            //         2,
+            //     )}, city=${city}, time=${totalTime}`,
+            // );
         }
 
         for (let subsetSize = 3; subsetSize <= n; subsetSize++) {
@@ -191,11 +224,11 @@ export class DynamicProgrammingService {
 
                     if (minTotalTime < Infinity) {
                         memo.set(key, [minTotalTime, minParent]);
-                        console.log(
-                            `DP: subset=${subset.toString(
-                                2,
-                            )}, lastCity=${lastCity}, time=${minTotalTime}, parent=${minParent}`,
-                        );
+                        // console.log(
+                        //     `DP: subset=${subset.toString(
+                        //         2,
+                        //     )}, lastCity=${lastCity}, time=${minTotalTime}, parent=${minParent}`,
+                        // );
                     }
                 }
             }
@@ -204,33 +237,33 @@ export class DynamicProgrammingService {
         let minTotalTime = Infinity;
         let lastCity = -1;
 
-        console.log(
-            `Finding optimal last city to visit before returning to start...`,
-        );
+        // console.log(
+        //     `Finding optimal last city to visit before returning to start...`,
+        // );
 
         for (let city = 1; city < n; city++) {
             const key = this.createMemoKey(allVisitedMask, city);
             if (memo.has(key)) {
                 const [totalTime, parent] = memo.get(key)!;
                 const completeTime = totalTime + durationMatrix[city][0];
-                console.log(
-                    `City ${city}: total time = ${totalTime}, parent = ${parent}, complete time = ${completeTime}`,
-                );
+                // console.log(
+                //     `City ${city}: total time = ${totalTime}, parent = ${parent}, complete time = ${completeTime}`,
+                // );
 
                 if (completeTime < minTotalTime) {
                     minTotalTime = completeTime;
                     lastCity = city;
-                    console.log(
-                        `New best last city: ${lastCity} with time: ${minTotalTime}`,
-                    );
+                    // console.log(
+                    //     `New best last city: ${lastCity} with time: ${minTotalTime}`,
+                    // );
                 }
             }
         }
 
         if (lastCity === -1) {
-            console.error(
-                'Could not find a valid tour - this should not happen',
-            );
+            // console.error(
+            //     'Could not find a valid tour - this should not happen',
+            // );
             const fallbackPath = Array.from({ length: n }, (_, i) => i);
             fallbackPath.push(0); // Return to start
 
@@ -270,26 +303,26 @@ export class DynamicProgrammingService {
         let currentMask = allVisitedMask;
         let currentCity = lastCity;
 
-        console.log(
-            `Starting path reconstruction with lastCity: ${lastCity}, minTotalTime: ${minTotalTime}`,
-        );
+        // console.log(
+        //     `Starting path reconstruction with lastCity: ${lastCity}, minTotalTime: ${minTotalTime}`,
+        // );
 
         while (currentCity !== -1) {
             path.unshift(currentCity);
             const key = this.createMemoKey(currentMask, currentCity);
             if (memo.has(key)) {
                 const [time, parent] = memo.get(key)!;
-                console.log(
-                    `Added city ${currentCity} to path, parent: ${parent}, time: ${time}`,
-                );
+                // console.log(
+                //     `Added city ${currentCity} to path, parent: ${parent}, time: ${time}`,
+                // );
                 currentMask = currentMask & ~(1 << currentCity);
                 currentCity = parent;
             } else {
-                console.log(
-                    `No memo entry found for city ${currentCity}, mask ${currentMask.toString(
-                        2,
-                    )}`,
-                );
+                // console.log(
+                //     `No memo entry found for city ${currentCity}, mask ${currentMask.toString(
+                //         2,
+                //     )}`,
+                // );
                 break;
             }
         }
@@ -299,7 +332,7 @@ export class DynamicProgrammingService {
         }
         path.push(0);
 
-        console.log(`Final reconstructed path: ${path.join(' -> ')}`);
+        // console.log(`Final reconstructed path: ${path.join(' -> ')}`);
 
         const optimalPoints: Coordinate[] = path.map(
             (index) => clusteredPois[index],
@@ -325,13 +358,13 @@ export class DynamicProgrammingService {
                     if (i < path.length - 2) {
                         totalDuration += durationMatrix[fromIndex][toIndex];
                     }
-                    console.log(
-                        `Segment ${i}: from ${fromIndex} to ${toIndex}, distance: ${distanceMatrix[fromIndex][toIndex]}, duration: ${durationMatrix[fromIndex][toIndex]}`,
-                    );
+                    // console.log(
+                    //     `Segment ${i}: from ${fromIndex} to ${toIndex}, distance: ${distanceMatrix[fromIndex][toIndex]}, duration: ${durationMatrix[fromIndex][toIndex]}`,
+                    // );
                 } else {
-                    console.warn(
-                        `Invalid index in path: from ${fromIndex} to ${toIndex}`,
-                    );
+                    // console.warn(
+                    //     `Invalid index in path: from ${fromIndex} to ${toIndex}`,
+                    // );
                 }
             }
         }
@@ -344,7 +377,7 @@ export class DynamicProgrammingService {
                 totalVisitTime += visitDurations[cityIndex];
             }
         }
-        console.log('totalVisitTime', totalVisitTime, totalDuration);
+        // console.log('totalVisitTime', totalVisitTime, totalDuration);
 
         const totalTime = totalDuration + totalVisitTime;
 
