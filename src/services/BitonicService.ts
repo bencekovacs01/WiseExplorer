@@ -190,7 +190,6 @@ export class BitonicService {
         const { distanceMatrix, durationMatrix } = await this.getRouteMatrices(
             clusteredPois,
         );
-        // console.log('durationMatrix', durationMatrix.length, clusteredPois.length);
 
         const sortedPois = [...clusteredPois];
 

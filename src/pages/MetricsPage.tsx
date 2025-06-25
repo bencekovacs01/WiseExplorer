@@ -20,43 +20,24 @@ const MetricsPage: React.FC = () => {
     const [progress, setProgress] = useState(0);
     const [testResults, setTestResults] = useState<string>('');
 
-    // Function to run automated tests of different algorithms
     const runPerformanceTests = async () => {
-        // Initialize
         setIsRunningTests(true);
         setProgress(0);
         setTestResults(
             'Starting performance tests using real POI data from poiData100.json...\n',
         );
 
-        // Define test parameters for the specific group comparisons:
-        // Group 1: Branch-and-Bound, Dynamic Programming, and Bitonic at 15 nodes
-        // Group 2: Dynamic Programming and Bitonic at 30 nodes
-        // Group 3: Bitonic variations at 90 nodes
-
-        // Bitonic node counts - test at 15, 30, and 90 nodes
         const bitonicNodeCounts = [15, 30, 90];
-
-        // Branch and Bound - only test at 15 nodes
         const branchAndBoundNodeCounts = [15];
-
-        // Dynamic Programming - test at 15 and 30 nodes
         const dynamicProgrammingNodeCounts = [15, 30];
-
-        // Backtracking - not needed for comparisons
+        const acoNodeCounts = [15, 30, 90];
         const backtrackingNodeCounts: number[] = [];
 
         const strategies = Object.values(SortStrategy);
 
-        // Function to get coordinates from POI data
         const getCoordinatesFromPOI = (count: number): Coordinate[] => {
-            // Make sure we don't try to get more POIs than are available
             const actualCount = Math.min(count, poiData100.pois.length);
-
-            // Get a slice of the POI data based on the requested count
             const pois = poiData100.pois.slice(0, actualCount);
-
-            // Map the POIs to Coordinate objects
             return pois.map((poi) => ({
                 latitude: poi.latitude,
                 longitude: poi.longitude,
@@ -64,23 +45,11 @@ const MetricsPage: React.FC = () => {
         };
 
         const getMetadataFromPOI = (count: number): any => {
-            // Make sure we don't try to get more POIs than are available
             const actualCount = Math.min(count, poiData100.poiMetadata.length);
-
-            // Get a slice of the POI data based on the requested count
             const poiMetadata = poiData100.poiMetadata.slice(0, actualCount);
-            console.log('poiMetadata', poiMetadata);
-
             return poiMetadata;
-
-            // Map the POIs to Coordinate objects
-            // return pois.map((poi) => ({
-            //     latitude: poi.latitude,
-            //     longitude: poi.longitude,
-            // }));
         };
 
-        // Batch updating function to prevent state update cascades
         const processBitonicBatch = async (nodeCount: number) => {
             try {
                 // Get coordinates from POI data once per node count
@@ -88,10 +57,8 @@ const MetricsPage: React.FC = () => {
                 const metadata = getMetadataFromPOI(nodeCount);
                 const bitonicService = new BitonicService();
 
-                // Process each strategy
                 let batchOutput = `\nTesting Bitonic variants with ${nodeCount} POI nodes from real data...\n`;
 
-                // Process strategies individually to avoid freezing
                 for (let i = 0; i < strategies.length; i++) {
                     const strategy = strategies[i];
                     try {
@@ -107,26 +74,22 @@ const MetricsPage: React.FC = () => {
                         batchOutput += `Failed: ${error}\n`;
                     }
 
-                    // Brief pause after each strategy
                     if (i < strategies.length - 1) {
                         await new Promise((resolve) => setTimeout(resolve, 50));
                     }
                 }
 
-                // Return the results for this node count
                 return batchOutput;
             } catch (error) {
                 return `\nError in test batch for ${nodeCount} nodes: ${error}\n`;
             }
         };
 
-        // Batch function for other algorithms
         const processOtherAlgorithmsBatch = async (
             nodeCount: number,
             algorithmType: string,
         ) => {
             try {
-                // Get coordinates from POI data once per node count
                 const coords = getCoordinatesFromPOI(nodeCount);
                 const metadata = getMetadataFromPOI(nodeCount);
 
@@ -168,6 +131,14 @@ const MetricsPage: React.FC = () => {
                             metadata,
                         );
                         batchOutput += `Success\n`;
+                    } else if (algorithmType === 'ACO') {
+                        const AcoService = (
+                            await import('../services/AcoService')
+                        ).default;
+                        const acoService = new AcoService();
+                        batchOutput += `  Testing ACO... `;
+                        await acoService.findOptimalRoute(coords, metadata);
+                        batchOutput += `Success\n`;
                     }
                 } catch (error) {
                     batchOutput += `Failed: ${error}\n`;
@@ -180,10 +151,8 @@ const MetricsPage: React.FC = () => {
         };
 
         try {
-            // Clear previous metrics once at the beginning
             metricsService.clearMetrics();
 
-            // Calculate total test count for progress tracking
             const strategiesCount = Object.values(SortStrategy).length;
             const totalBitonicTests = bitonicNodeCounts.reduce(
                 (sum, nodeCount) => sum + strategiesCount,
@@ -193,6 +162,7 @@ const MetricsPage: React.FC = () => {
                 totalBitonicTests +
                 branchAndBoundNodeCounts.length +
                 dynamicProgrammingNodeCounts.length +
+                acoNodeCounts.length +
                 backtrackingNodeCounts.length;
             let testsCompleted = 0;
 
@@ -200,20 +170,17 @@ const MetricsPage: React.FC = () => {
                 (prev) =>
                     prev +
                     '\nRunning tests for these specific comparison groups using real POI data:\n' +
-                    '- Branch-and-Bound, Dynamic Programming, and Bitonic at 15 nodes\n' +
-                    '- Dynamic Programming and Bitonic at 30 nodes\n' +
-                    '- Bitonic variations at 90 nodes\n',
+                    '- Branch-and-Bound, Dynamic Programming, ACO, and Bitonic at 15 nodes\n' +
+                    '- Dynamic Programming, ACO, and Bitonic at 30 nodes\n' +
+                    '- ACO and Bitonic variations at 90 nodes\n',
             );
 
-            // Process Bitonic tests
             for (let i = 0; i < bitonicNodeCounts.length; i++) {
-                // Process this batch and append its results
                 const batchResults = await processBitonicBatch(
                     bitonicNodeCounts[i],
                 );
                 setTestResults((prev) => prev + batchResults);
 
-                // Update progress - count all strategies for this node count as completed
                 testsCompleted += strategiesCount;
                 const currentProgress = Math.min(
                     98,
@@ -221,11 +188,9 @@ const MetricsPage: React.FC = () => {
                 );
                 setProgress(currentProgress);
 
-                // Small delay to let React update the UI
                 await new Promise((resolve) => setTimeout(resolve, 200));
             }
 
-            // Process Branch and Bound tests with small node counts
             for (let i = 0; i < branchAndBoundNodeCounts.length; i++) {
                 const batchResults = await processOtherAlgorithmsBatch(
                     branchAndBoundNodeCounts[i],
@@ -233,7 +198,6 @@ const MetricsPage: React.FC = () => {
                 );
                 setTestResults((prev) => prev + batchResults);
 
-                // Update progress and ensure it doesn't exceed 100%
                 testsCompleted++;
                 const currentProgress = Math.min(
                     98,
@@ -243,7 +207,6 @@ const MetricsPage: React.FC = () => {
                 await new Promise((resolve) => setTimeout(resolve, 100));
             }
 
-            // Process Dynamic Programming tests
             for (let i = 0; i < dynamicProgrammingNodeCounts.length; i++) {
                 const batchResults = await processOtherAlgorithmsBatch(
                     dynamicProgrammingNodeCounts[i],
@@ -251,7 +214,6 @@ const MetricsPage: React.FC = () => {
                 );
                 setTestResults((prev) => prev + batchResults);
 
-                // Update progress and ensure it doesn't exceed 100%
                 testsCompleted++;
                 const currentProgress = Math.min(
                     98,
@@ -261,7 +223,22 @@ const MetricsPage: React.FC = () => {
                 await new Promise((resolve) => setTimeout(resolve, 100));
             }
 
-            // Process Backtracking tests
+            for (let i = 0; i < acoNodeCounts.length; i++) {
+                const batchResults = await processOtherAlgorithmsBatch(
+                    acoNodeCounts[i],
+                    'ACO',
+                );
+                setTestResults((prev) => prev + batchResults);
+
+                testsCompleted++;
+                const currentProgress = Math.min(
+                    98,
+                    Math.round((testsCompleted / totalTests) * 100),
+                );
+                setProgress(currentProgress);
+                await new Promise((resolve) => setTimeout(resolve, 100));
+            }
+
             for (let i = 0; i < backtrackingNodeCounts.length; i++) {
                 const batchResults = await processOtherAlgorithmsBatch(
                     backtrackingNodeCounts[i],
@@ -269,7 +246,6 @@ const MetricsPage: React.FC = () => {
                 );
                 setTestResults((prev) => prev + batchResults);
 
-                // Update progress and ensure it doesn't exceed 100%
                 testsCompleted++;
                 const currentProgress = Math.min(
                     98,
@@ -279,7 +255,6 @@ const MetricsPage: React.FC = () => {
                 await new Promise((resolve) => setTimeout(resolve, 100));
             }
 
-            // Final update
             setTestResults(
                 (prev) =>
                     prev +
@@ -287,10 +262,8 @@ const MetricsPage: React.FC = () => {
             );
             setProgress(100); // Ensure progress bar shows completion
         } catch (error) {
-            // Handle any overall errors
             setTestResults((prev) => prev + `\nError running tests: ${error}`);
         } finally {
-            // Always mark as completed
             setIsRunningTests(false);
         }
     };
@@ -311,14 +284,14 @@ const MetricsPage: React.FC = () => {
                 </Typography>
                 <Box component="ul" sx={{ mb: 2 }}>
                     <Typography component="li">
-                        15 POIs: Branch-and-Bound, Dynamic Programming, and
+                        15 POIs: Branch-and-Bound, Dynamic Programming, ACO, and
                         Bitonic
                     </Typography>
                     <Typography component="li">
-                        30 POIs: Dynamic Programming and Bitonic
+                        30 POIs: Dynamic Programming, ACO, and Bitonic
                     </Typography>
                     <Typography component="li">
-                        90 POIs: All Bitonic variants
+                        90 POIs: ACO and All Bitonic variants
                     </Typography>
                 </Box>
 
@@ -383,35 +356,40 @@ const MetricsPage: React.FC = () => {
                 <Box component="ul" sx={{ pl: 2 }}>
                     <Typography component="li">
                         <strong>Group 1 (15 POIs):</strong> Comparing
-                        Branch-and-Bound, Dynamic Programming, and Bitonic at 15
-                        real-world POIs demonstrates the trade-offs between
-                        optimality and performance in real scenarios.
+                        Branch-and-Bound, Dynamic Programming, ACO, and Bitonic
+                        at 15 real-world POIs demonstrates the trade-offs
+                        between optimality and performance in real scenarios.
                         Branch-and-Bound and Dynamic Programming provide optimal
-                        solutions but with significantly longer execution times.
+                        solutions but with significantly longer execution times,
+                        while ACO provides good solutions faster than exact
+                        algorithms.
                     </Typography>
                     <Typography component="li">
                         <strong>Group 2 (30 POIs):</strong> At 30 real-world
-                        POIs, we compare Dynamic Programming and Bitonic. This
-                        shows the practical limits of Dynamic Programming with
-                        actual geographical data and highlights how Bitonic
-                        maintains reasonable performance even as the POI count
-                        increases.
+                        POIs, we compare Dynamic Programming, ACO, and Bitonic.
+                        This shows the practical limits of Dynamic Programming
+                        with actual geographical data and highlights how ACO and
+                        Bitonic maintain reasonable performance even as the POI
+                        count increases.
                     </Typography>
                     <Typography component="li">
-                        <strong>Group 3 (90 POIs):</strong> Comparing all
-                        Bitonic variants at 90 real-world POIs reveals how
+                        <strong>Group 3 (90 POIs):</strong> Comparing ACO and
+                        all Bitonic variants at 90 real-world POIs reveals how
                         different sort strategies (W→E, E→W, S→N, N→S, CW, CCW,
                         I→O, O→I) affect route quality and execution times at
-                        scale with real geographical data. This demonstrates
-                        Bitonic&apos;s excellent scalability for large datasets.
+                        scale with real geographical data, and how ACO performs
+                        compared to heuristic approaches. This demonstrates both
+                        ACO and Bitonic&apos;s excellent scalability for large
+                        datasets.
                     </Typography>
                     <Typography component="li">
                         <strong>Overall:</strong> These comparisons using real
-                        POI data illustrate why Bitonic approaches are preferred
-                        for large-scale routing problems despite producing
-                        sub-optimal solutions, while exact algorithms like
-                        Branch-and-Bound and Dynamic Programming are limited to
-                        smaller problem sizes in real-world applications.
+                        POI data illustrate why ACO and Bitonic approaches are
+                        preferred for large-scale routing problems despite
+                        producing sub-optimal solutions, while exact algorithms
+                        like Branch-and-Bound and Dynamic Programming are
+                        limited to smaller problem sizes in real-world
+                        applications.
                     </Typography>
                 </Box>
             </Paper>

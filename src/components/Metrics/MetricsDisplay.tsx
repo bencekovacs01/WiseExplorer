@@ -10,10 +10,6 @@ import {
     TableHead,
     TableRow,
     Button,
-    FormControl,
-    InputLabel,
-    Select,
-    MenuItem,
     Tabs,
     Tab,
     Alert,
@@ -331,47 +327,25 @@ export const MetricsDisplay: React.FC = () => {
 
     const allMetrics = metricsService.getAllMetrics();
 
-    // Deduplicate metrics - keep only the latest entry for each algorithm/variant/nodeCount combination
     const deduplicatedMetrics = useMemo(() => {
         const metricsMap = new Map<string, AlgorithmMetrics>();
-        
-        allMetrics.forEach(metric => {
-            const key = `${metric.algorithmName}_${metric.variant || 'default'}_${metric.nodeCount}`;
+
+        allMetrics.forEach((metric) => {
+            const key = `${metric.algorithmName}_${
+                metric.variant || 'default'
+            }_${metric.nodeCount}`;
             const existingMetric = metricsMap.get(key);
-            
-            // Keep the metric with the latest timestamp
-            if (!existingMetric || metric.timestamp > existingMetric.timestamp) {
+
+            if (
+                !existingMetric ||
+                metric.timestamp > existingMetric.timestamp
+            ) {
                 metricsMap.set(key, metric);
             }
         });
-        
+
         return Array.from(metricsMap.values());
     }, [allMetrics]);
-
-    const availableNodeCounts = useMemo(() => {
-        const counts = [...new Set(deduplicatedMetrics.map((m) => m.nodeCount))].sort(
-            (a, b) => a - b,
-        );
-        return counts;
-    }, [deduplicatedMetrics]);
-
-    const filteredMetrics = useMemo(() => {
-        return deduplicatedMetrics.filter((m) => m.nodeCount === selectedNodeCount);
-    }, [deduplicatedMetrics, selectedNodeCount]);
-
-    const groupedMetrics = useMemo(() => {
-        const groups: Record<string, AlgorithmMetrics[]> = {};
-        filteredMetrics.forEach((metric) => {
-            const key = metric.variant
-                ? `${metric.algorithmName}_${metric.variant}`
-                : metric.algorithmName;
-            if (!groups[key]) {
-                groups[key] = [];
-            }
-            groups[key].push(metric);
-        });
-        return groups;
-    }, [filteredMetrics]);
 
     const algorithmGroups = useMemo(() => {
         const groups = {
@@ -380,12 +354,12 @@ export const MetricsDisplay: React.FC = () => {
             group90: [] as AlgorithmMetrics[],
         };
 
-        console.log('deduplicatedMetrics', deduplicatedMetrics);
         groups.group15 = deduplicatedMetrics.filter(
             (m) =>
                 m.nodeCount === 15 &&
                 (m.algorithmName === 'BranchAndBound' ||
                     m.algorithmName === 'DynamicProgramming' ||
+                    m.algorithmName === 'ACO' ||
                     m.algorithmName === 'Bitonic'),
         );
 
@@ -393,23 +367,18 @@ export const MetricsDisplay: React.FC = () => {
             (m) =>
                 m.nodeCount === 30 &&
                 (m.algorithmName === 'DynamicProgramming' ||
+                    m.algorithmName === 'ACO' ||
                     m.algorithmName === 'Bitonic'),
         );
 
         groups.group90 = deduplicatedMetrics.filter(
-            (m) => m.nodeCount === 90 && m.algorithmName === 'Bitonic',
+            (m) =>
+                m.nodeCount === 90 &&
+                (m.algorithmName === 'ACO' || m.algorithmName === 'Bitonic'),
         );
 
         return groups;
     }, [deduplicatedMetrics]);
-
-    const bitonicVariants = useMemo(() => {
-        return deduplicatedMetrics.filter(
-            (m) =>
-                m.algorithmName === 'Bitonic' &&
-                m.nodeCount === selectedNodeCount,
-        );
-    }, [deduplicatedMetrics, selectedNodeCount]);
 
     const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
         setActiveTab(newValue);
@@ -424,6 +393,361 @@ export const MetricsDisplay: React.FC = () => {
         a.download = `algorithm_metrics_${
             new Date().toISOString().split('T')[0]
         }.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+    };
+
+    const exportGroupComparisonToLatex = () => {
+        const calculateStatistics = (metrics: AlgorithmMetrics[]) => {
+            const executionTimes = metrics
+                .map((m) => m.executionTimeMs)
+                .filter((t) => t !== undefined) as number[];
+            const routeDistances = metrics
+                .map((m) => m.routeDistance)
+                .filter((d) => d !== undefined) as number[];
+            const routeDurations = metrics
+                .map((m) => m.routeDuration)
+                .filter((d) => d !== undefined) as number[];
+
+            return {
+                avgExecution:
+                    executionTimes.length > 0
+                        ? executionTimes.reduce((a, b) => a + b, 0) /
+                          executionTimes.length
+                        : 0,
+                minExecution:
+                    executionTimes.length > 0 ? Math.min(...executionTimes) : 0,
+                maxExecution:
+                    executionTimes.length > 0 ? Math.max(...executionTimes) : 0,
+                avgDistance:
+                    routeDistances.length > 0
+                        ? routeDistances.reduce((a, b) => a + b, 0) /
+                          routeDistances.length
+                        : 0,
+                minDistance:
+                    routeDistances.length > 0 ? Math.min(...routeDistances) : 0,
+                maxDistance:
+                    routeDistances.length > 0 ? Math.max(...routeDistances) : 0,
+                avgDuration:
+                    routeDurations.length > 0
+                        ? routeDurations.reduce((a, b) => a + b, 0) /
+                          routeDurations.length
+                        : 0,
+                minDuration:
+                    routeDurations.length > 0 ? Math.min(...routeDurations) : 0,
+                maxDuration:
+                    routeDurations.length > 0 ? Math.max(...routeDurations) : 0,
+            };
+        };
+
+        const generateAlgorithmSection = (
+            metrics: AlgorithmMetrics[],
+            algorithmName: string,
+            nodeCount: number,
+        ) => {
+            if (metrics.length === 0) return '';
+
+            const stats = calculateStatistics(metrics);
+            const convertMsToSec = (ms: number) => ms / 1000;
+
+            let section = `\\section{${algorithmName} - ${nodeCount} POI}\n\n`;
+
+            section += `\\begin{itemize}\n`;
+            section += `\\item Futási idők \\textbf{átlaga}: $${convertMsToSec(
+                stats.avgExecution,
+            ).toFixed(4)}$ sec\n`;
+            section += `\\item Futási idők \\textbf{minimuma}: $${convertMsToSec(
+                stats.minExecution,
+            ).toFixed(4)}$ sec\n`;
+            section += `\\item Futási idők \\textbf{maximuma}: $${convertMsToSec(
+                stats.maxExecution,
+            ).toFixed(4)}$ sec\n`;
+            section += `\\end{itemize}\n\n`;
+
+            switch (algorithmName) {
+                case 'Branch-and-Bound':
+                    section += `A Branch-and-Bound algoritmus optimális megoldást nyújt a TSP problémára, azonban jelentős számítási erőforrásokat igényel. Az algoritmus az optimális utat keresi meg a keresési fa szisztematikus bejárásával és pruning technikákkal.\n\n`;
+                    break;
+                case 'Dynamic Programming':
+                    section += `A Dynamic Programming (Held-Karp) algoritmus szintén optimális megoldást ad, de exponenciális időbonyolultsága miatt csak kisebb problémaméretek esetén alkalmazható hatékonyan. Az algoritmus a részproblémák megoldásainak tárolásával kerüli az ismételt számításokat.\n\n`;
+                    break;
+                case 'ACO':
+                    section += `Az Ant Colony Optimization (ACO) metaheurisztika kiváló skálázhatóságot mutat és nagy problémaméretek esetén is hatékony megoldásokat talál. Az algoritmus a hangyák viselkedését modellezi és feromonnyomok alapján iteratívan javítja a megoldást.\n\n`;
+                    break;
+                case 'Bitonic Variants':
+                    section += `A Bitonic algoritmus különböző rendezési stratégiái (W→E, E→W, S→N, N→S, CW, CCW, I→O, O→I) gyors heurisztikus megoldásokat nyújtanak. Az algoritmus a pontok geometriai elrendezését használja ki az útvonal optimalizálásához.\n\n`;
+                    break;
+            }
+
+            section += `\\begin{itemize}\n`;
+            section += `\\item Útvonal távolságok \\textbf{átlaga}: $${(
+                stats.avgDistance / 1000
+            ).toFixed(2)}$ km\n`;
+            section += `\\item Útvonal távolságok \\textbf{minimuma}: $${(
+                stats.minDistance / 1000
+            ).toFixed(2)}$ km\n`;
+            section += `\\item Útvonal távolságok \\textbf{maximuma}: $${(
+                stats.maxDistance / 1000
+            ).toFixed(2)}$ km\n`;
+            section += `\\end{itemize}\n\n`;
+
+            section += `\\begin{itemize}\n`;
+            section += `\\item Útvonal időtartamok \\textbf{átlaga}: $${stats.avgDuration.toFixed(
+                2,
+            )}$ perc\n`;
+            section += `\\item Útvonal időtartamok \\textbf{minimuma}: $${stats.minDuration.toFixed(
+                2,
+            )}$ perc\n`;
+            section += `\\item Útvonal időtartamok \\textbf{maximuma}: $${stats.maxDuration.toFixed(
+                2,
+            )}$ perc\n`;
+            section += `\\end{itemize}\n\n`;
+
+            return section;
+        };
+
+        const generateComparisonTable = (groups: {
+            group15: AlgorithmMetrics[];
+            group30: AlgorithmMetrics[];
+            group90: AlgorithmMetrics[];
+        }) => {
+            let table = `\\section{Algoritmusok összehasonlítása}\n\n`;
+            table += `Az előző alfejezetekben ismertettem a különböző útvonalkereső algoritmusokat és azok teljesítményét. Mindegyik esetében láthattunk futási időket és útvonal minőségi mutatókat, azonban nem láttuk ezeket egymás mellett. Ebben az alfejezetben összegezzük és összehasonlítjuk a kapott eredményeket.\n\n`;
+
+            table += `Fontos, hogy minden algoritmust ugyanazon a hardveren és ugyanazokkal a valós POI adatokkal teszteljünk, mert csak így reálisak és összehasonlíthatóak a mérési adatok.\n\n`;
+
+            if (groups.group15.length > 0) {
+                const sortedGroup15 = [...groups.group15].sort((a, b) => {
+                    const aDuration = a.routeDuration || 0;
+                    const bDuration = b.routeDuration || 0;
+                    if (aDuration !== bDuration) {
+                        return aDuration - bDuration;
+                    }
+                    const order = [
+                        'BranchAndBound',
+                        'DynamicProgramming',
+                        'ACO',
+                        'Bitonic',
+                    ];
+                    return (
+                        order.indexOf(a.algorithmName) -
+                        order.indexOf(b.algorithmName)
+                    );
+                });
+
+                table += `\\begin{table}[h!]\n`;
+                table += `\\centering\n`;
+                table += `\\begin{tabular}{ | l | c | c | c | c |}\n`;
+                table += `\\hline\n`;
+                table += `\\textbf{Algoritmus} & \\textbf{Futási} & \\textbf{Útvonal} & \\textbf{Útvonal} & \\textbf{Variáns}\\\\\n`;
+                table += ` & \\textbf{idő (s)} & \\textbf{távolság (km)} & \\textbf{időtartam (perc)} & \\\\\n`;
+                table += `\\hline\n`;
+
+                sortedGroup15.forEach((metric) => {
+                    const avgTime = (metric.executionTimeMs! / 1000).toFixed(4);
+                    const distance =
+                        metric.routeDistance !== undefined
+                            ? (metric.routeDistance / 1000).toFixed(2)
+                            : 'N/A';
+                    const duration =
+                        metric.routeDuration !== undefined
+                            ? metric.routeDuration.toFixed(2)
+                            : 'N/A';
+                    const variant = metric.variant || '-';
+
+                    table += `${metric.algorithmName} & $${avgTime}$ & $${distance}$ & $${duration}$ & ${variant}\\\\\n`;
+                    table += `\\hline\n`;
+                });
+
+                table += `\\end{tabular}\n`;
+                table += `\\caption{Mérési eredmények $n = 15$ POI esetén.}\n`;
+                table += `\\label{table:comparison-15}\n`;
+                table += `\\end{table}\n\n`;
+            }
+
+            if (groups.group30.length > 0) {
+                const sortedGroup30 = [...groups.group30].sort((a, b) => {
+                    const aDuration = a.routeDuration || 0;
+                    const bDuration = b.routeDuration || 0;
+                    if (aDuration !== bDuration) {
+                        return aDuration - bDuration;
+                    }
+                    const order = ['DynamicProgramming', 'ACO', 'Bitonic'];
+                    return (
+                        order.indexOf(a.algorithmName) -
+                        order.indexOf(b.algorithmName)
+                    );
+                });
+
+                table += `\\begin{table}[h!]\n`;
+                table += `\\centering\n`;
+                table += `\\begin{tabular}{ | l | c | c | c | c |}\n`;
+                table += `\\hline\n`;
+                table += `\\textbf{Algoritmus} & \\textbf{Futási} & \\textbf{Útvonal} & \\textbf{Útvonal} & \\textbf{Variáns}\\\\\n`;
+                table += ` & \\textbf{idő (s)} & \\textbf{távolság (km)} & \\textbf{időtartam (perc)} & \\\\\n`;
+                table += `\\hline\n`;
+
+                sortedGroup30.forEach((metric) => {
+                    const avgTime = (metric.executionTimeMs! / 1000).toFixed(4);
+                    const distance =
+                        metric.routeDistance !== undefined
+                            ? (metric.routeDistance / 1000).toFixed(2)
+                            : 'N/A';
+                    const duration =
+                        metric.routeDuration !== undefined
+                            ? metric.routeDuration.toFixed(2)
+                            : 'N/A';
+                    const variant = metric.variant || '-';
+
+                    table += `${metric.algorithmName} & $${avgTime}$ & $${distance}$ & $${duration}$ & ${variant}\\\\\n`;
+                    table += `\\hline\n`;
+                });
+
+                table += `\\end{tabular}\n`;
+                table += `\\caption{Mérési eredmények $n = 30$ POI esetén.}\n`;
+                table += `\\label{table:comparison-30}\n`;
+                table += `\\end{table}\n\n`;
+            }
+
+            if (groups.group90.length > 0) {
+                const sortedGroup90 = [...groups.group90].sort((a, b) => {
+                    const aDuration = a.routeDuration || 0;
+                    const bDuration = b.routeDuration || 0;
+                    if (aDuration !== bDuration) {
+                        return aDuration - bDuration;
+                    }
+                    if (a.algorithmName !== b.algorithmName) {
+                        return a.algorithmName === 'ACO' ? -1 : 1;
+                    }
+                    return (a.variant || '').localeCompare(b.variant || '');
+                });
+
+                table += `\\begin{table}[h!]\n`;
+                table += `\\centering\n`;
+                table += `\\begin{tabular}{ | l | c | c | c | c |}\n`;
+                table += `\\hline\n`;
+                table += `\\textbf{Algoritmus} & \\textbf{Futási} & \\textbf{Útvonal} & \\textbf{Útvonal} & \\textbf{Variáns}\\\\\n`;
+                table += ` & \\textbf{idő (s)} & \\textbf{távolság (km)} & \\textbf{időtartam (perc)} & \\\\\n`;
+                table += `\\hline\n`;
+
+                sortedGroup90.forEach((metric) => {
+                    const avgTime = (metric.executionTimeMs! / 1000).toFixed(4);
+                    const distance =
+                        metric.routeDistance !== undefined
+                            ? (metric.routeDistance / 1000).toFixed(2)
+                            : 'N/A';
+                    const duration =
+                        metric.routeDuration !== undefined
+                            ? metric.routeDuration.toFixed(2)
+                            : 'N/A';
+                    const variant = metric.variant || '-';
+
+                    table += `${metric.algorithmName} & $${avgTime}$ & $${distance}$ & $${duration}$ & ${variant}\\\\\n`;
+                    table += `\\hline\n`;
+                });
+
+                table += `\\end{tabular}\n`;
+                table += `\\caption{Mérési eredmények $n = 90$ POI esetén.}\n`;
+                table += `\\label{table:comparison-90}\n`;
+                table += `\\end{table}\n\n`;
+            }
+
+            return table;
+        };
+
+        let fullLatex = `\\chapter{Mérések}\n\n`;
+        fullLatex += `Az alábbiakban bemutatom a különböző útvonalkereső algoritmusok teljesítménymérésének eredményeit. A mérések során valós POI (Point of Interest) adatokat használtam, hogy minél reálisabb körülmények között értékeljem az algoritmusok hatékonyságát.\n\n`;
+
+        if (algorithmGroups.group15.length > 0) {
+            const group15ByAlgorithm = algorithmGroups.group15.reduce(
+                (acc, metric) => {
+                    if (!acc[metric.algorithmName]) {
+                        acc[metric.algorithmName] = [];
+                    }
+                    acc[metric.algorithmName].push(metric);
+                    return acc;
+                },
+                {} as Record<string, AlgorithmMetrics[]>,
+            );
+
+            Object.entries(group15ByAlgorithm).forEach(
+                ([algorithmName, metrics]) => {
+                    fullLatex += generateAlgorithmSection(
+                        metrics,
+                        algorithmName,
+                        15,
+                    );
+                },
+            );
+        }
+
+        if (algorithmGroups.group30.length > 0) {
+            const group30ByAlgorithm = algorithmGroups.group30.reduce(
+                (acc, metric) => {
+                    if (!acc[metric.algorithmName]) {
+                        acc[metric.algorithmName] = [];
+                    }
+                    acc[metric.algorithmName].push(metric);
+                    return acc;
+                },
+                {} as Record<string, AlgorithmMetrics[]>,
+            );
+
+            Object.entries(group30ByAlgorithm).forEach(
+                ([algorithmName, metrics]) => {
+                    fullLatex += generateAlgorithmSection(
+                        metrics,
+                        algorithmName,
+                        30,
+                    );
+                },
+            );
+        }
+
+        if (algorithmGroups.group90.length > 0) {
+            const group90ByAlgorithm = algorithmGroups.group90.reduce(
+                (acc, metric) => {
+                    if (!acc[metric.algorithmName]) {
+                        acc[metric.algorithmName] = [];
+                    }
+                    acc[metric.algorithmName].push(metric);
+                    return acc;
+                },
+                {} as Record<string, AlgorithmMetrics[]>,
+            );
+
+            Object.entries(group90ByAlgorithm).forEach(
+                ([algorithmName, metrics]) => {
+                    if (algorithmName === 'Bitonic') {
+                        fullLatex += generateAlgorithmSection(
+                            metrics,
+                            'Bitonic Variants',
+                            90,
+                        );
+                    } else {
+                        fullLatex += generateAlgorithmSection(
+                            metrics,
+                            algorithmName,
+                            90,
+                        );
+                    }
+                },
+            );
+        }
+
+        fullLatex += generateComparisonTable(algorithmGroups);
+
+        const blob = new Blob([fullLatex], {
+            type: 'text/plain; charset=utf-8',
+        });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `algorithm_metrics_hungarian_${
+            new Date().toISOString().split('T')[0]
+        }.tex`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
@@ -457,46 +781,146 @@ export const MetricsDisplay: React.FC = () => {
         }
 
         return (
-            <TableContainer component={Paper} sx={{ mt: 2 }}>
-                <Table>
+            <TableContainer
+                component={Paper}
+                sx={{
+                    mt: 2,
+                    maxWidth: '100%',
+                    overflowX: 'auto',
+                    '&::-webkit-scrollbar': {
+                        height: 8,
+                    },
+                    '&::-webkit-scrollbar-track': {
+                        backgroundColor: '#f1f1f1',
+                        borderRadius: 4,
+                    },
+                    '&::-webkit-scrollbar-thumb': {
+                        backgroundColor: '#888',
+                        borderRadius: 4,
+                    },
+                    '&::-webkit-scrollbar-thumb:hover': {
+                        backgroundColor: '#555',
+                    },
+                }}
+            >
+                <Table sx={{ minWidth: 800 }} size="small">
                     <TableHead>
                         <TableRow>
-                            <TableCell>Algorithm</TableCell>
-                            <TableCell>Variant</TableCell>
-                            <TableCell>Nodes</TableCell>
-                            <TableCell>Execution Time</TableCell>
-                            <TableCell>Route Distance</TableCell>
-                            <TableCell>Travel Time</TableCell>
-                            <TableCell>Visit Time</TableCell>
-                            <TableCell>Total Time</TableCell>
+                            <TableCell sx={{ minWidth: 100, px: 1, py: 1 }}>
+                                Algorithm
+                            </TableCell>
+                            <TableCell sx={{ minWidth: 70, px: 1, py: 1 }}>
+                                Variant
+                            </TableCell>
+                            <TableCell sx={{ minWidth: 50, px: 1, py: 1 }}>
+                                Nodes
+                            </TableCell>
+                            <TableCell sx={{ minWidth: 100, px: 1, py: 1 }}>
+                                Execution Time
+                            </TableCell>
+                            <TableCell sx={{ minWidth: 100, px: 1, py: 1 }}>
+                                Route Distance
+                            </TableCell>
+                            <TableCell sx={{ minWidth: 90, px: 1, py: 1 }}>
+                                Travel Time
+                            </TableCell>
+                            <TableCell sx={{ minWidth: 90, px: 1, py: 1 }}>
+                                Visit Time
+                            </TableCell>
+                            <TableCell sx={{ minWidth: 90, px: 1, py: 1 }}>
+                                Total Time
+                            </TableCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>
                         {metrics.map((metric, index) => (
                             <TableRow key={index}>
-                                <TableCell>{metric.algorithmName}</TableCell>
-                                <TableCell>
+                                <TableCell
+                                    sx={{
+                                        minWidth: 100,
+                                        px: 1,
+                                        py: 0.5,
+                                        fontSize: '0.875rem',
+                                        fontWeight: 500,
+                                    }}
+                                >
+                                    {metric.algorithmName}
+                                </TableCell>
+                                <TableCell
+                                    sx={{ minWidth: 70, px: 1, py: 0.5 }}
+                                >
                                     {metric.variant && (
                                         <Chip
                                             label={metric.variant}
                                             size="small"
+                                            sx={{
+                                                fontSize: '0.75rem',
+                                                height: 20,
+                                                '& .MuiChip-label': {
+                                                    px: 1,
+                                                },
+                                            }}
                                         />
                                     )}
                                 </TableCell>
-                                <TableCell>{metric.nodeCount}</TableCell>
-                                <TableCell>
+                                <TableCell
+                                    sx={{
+                                        minWidth: 50,
+                                        px: 1,
+                                        py: 0.5,
+                                        fontSize: '0.875rem',
+                                    }}
+                                >
+                                    {metric.nodeCount}
+                                </TableCell>
+                                <TableCell
+                                    sx={{
+                                        minWidth: 100,
+                                        px: 1,
+                                        py: 0.5,
+                                        fontSize: '0.875rem',
+                                    }}
+                                >
                                     {formatTime(metric.executionTimeMs)}
                                 </TableCell>
-                                <TableCell>
+                                <TableCell
+                                    sx={{
+                                        minWidth: 100,
+                                        px: 1,
+                                        py: 0.5,
+                                        fontSize: '0.875rem',
+                                    }}
+                                >
                                     {formatDistance(metric.routeDistance)}
                                 </TableCell>
-                                <TableCell>
+                                <TableCell
+                                    sx={{
+                                        minWidth: 90,
+                                        px: 1,
+                                        py: 0.5,
+                                        fontSize: '0.875rem',
+                                    }}
+                                >
                                     {formatDuration(metric.routeDuration)}
                                 </TableCell>
-                                <TableCell>
+                                <TableCell
+                                    sx={{
+                                        minWidth: 90,
+                                        px: 1,
+                                        py: 0.5,
+                                        fontSize: '0.875rem',
+                                    }}
+                                >
                                     {formatDuration(metric.routeVisitTime)}
                                 </TableCell>
-                                <TableCell>
+                                <TableCell
+                                    sx={{
+                                        minWidth: 90,
+                                        px: 1,
+                                        py: 0.5,
+                                        fontSize: '0.875rem',
+                                    }}
+                                >
                                     {formatDuration(metric.routeDuration)}
                                 </TableCell>
                             </TableRow>
@@ -510,9 +934,48 @@ export const MetricsDisplay: React.FC = () => {
     const AlgorithmGroupComparison = () => {
         return (
             <Box>
-                <Typography variant="h5" gutterBottom>
-                    Algorithm Group Comparisons
-                </Typography>
+                <Box
+                    display="flex"
+                    justifyContent="space-between"
+                    alignItems="center"
+                    mb={3}
+                >
+                    <Typography variant="h5" gutterBottom>
+                        Algorithm Group Comparisons
+                    </Typography>
+                    <Box display="flex" gap={2}>
+                        <Button
+                            variant="outlined"
+                            startIcon={<Download />}
+                            onClick={handleExportCSV}
+                            disabled={deduplicatedMetrics.length === 0}
+                            size="small"
+                        >
+                            Export CSV
+                        </Button>
+                        <Button
+                            variant="outlined"
+                            startIcon={<Download />}
+                            onClick={exportGroupComparisonToLatex}
+                            disabled={
+                                algorithmGroups.group15.length === 0 &&
+                                algorithmGroups.group30.length === 0 &&
+                                algorithmGroups.group90.length === 0
+                            }
+                            size="small"
+                            sx={{
+                                color: '#d32f2f',
+                                borderColor: '#d32f2f',
+                                '&:hover': {
+                                    borderColor: '#9a0007',
+                                    backgroundColor: 'rgba(211, 47, 47, 0.04)',
+                                },
+                            }}
+                        >
+                            Export LaTeX
+                        </Button>
+                    </Box>
+                </Box>
 
                 <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
                     <Tabs value={activeTab} onChange={handleTabChange}>
@@ -524,7 +987,8 @@ export const MetricsDisplay: React.FC = () => {
 
                 <TabPanel value={activeTab} index={0}>
                     <Typography variant="h6" gutterBottom>
-                        Branch-and-Bound vs Dynamic Programming vs Bitonic (15 Nodes)
+                        Branch-and-Bound vs Dynamic Programming vs ACO vs
+                        Bitonic (15 Nodes)
                     </Typography>
                     <RouteDurationChart
                         metrics={algorithmGroups.group15}
@@ -548,16 +1012,16 @@ export const MetricsDisplay: React.FC = () => {
                         sx={{ mt: 2 }}
                     >
                         This comparison shows the trade-offs between optimal
-                        algorithms (Branch-and-Bound, Dynamic Programming)
-                        and the heuristic Bitonic algorithm at a
-                        manageable problem size. Note the execution time
+                        algorithms (Branch-and-Bound, Dynamic Programming),
+                        metaheuristic (ACO), and the heuristic Bitonic algorithm
+                        at a manageable problem size. Note the execution time
                         differences and how they relate to route quality.
                     </Typography>
                 </TabPanel>
 
                 <TabPanel value={activeTab} index={1}>
                     <Typography variant="h6" gutterBottom>
-                        Dynamic Programming vs Bitonic (30 Nodes)
+                        Dynamic Programming vs ACO vs Bitonic (30 Nodes)
                     </Typography>
                     <RouteDurationChart
                         metrics={algorithmGroups.group30}
@@ -581,7 +1045,7 @@ export const MetricsDisplay: React.FC = () => {
                         sx={{ mt: 2 }}
                     >
                         At 30 nodes, we can observe the practical limits of
-                        Dynamic Programming compared to Bitonic&apos;s
+                        Dynamic Programming compared to ACO and Bitonic&apos;s
                         scalability. The execution time difference becomes more
                         pronounced while route quality trade-offs become
                         evident.
@@ -590,33 +1054,35 @@ export const MetricsDisplay: React.FC = () => {
 
                 <TabPanel value={activeTab} index={2}>
                     <Typography variant="h6" gutterBottom>
-                        Bitonic Strategy Comparison (90 Nodes)
+                        ACO vs Bitonic Strategy Comparison (90 Nodes)
                     </Typography>
                     <RouteDurationChart
                         metrics={algorithmGroups.group90}
-                        title="Route Duration Comparison - Bitonic Variants (90 Nodes)"
+                        title="Route Duration Comparison - ACO vs Bitonic Variants (90 Nodes)"
                     />
                     <RouteDistanceChart
                         metrics={algorithmGroups.group90}
-                        title="Route Distance Comparison - Bitonic Variants (90 Nodes)"
+                        title="Route Distance Comparison - ACO vs Bitonic Variants (90 Nodes)"
                     />
                     <ExecutionTimeChart
                         metrics={algorithmGroups.group90}
-                        title="Algorithm Execution Time - Bitonic Variants (90 Nodes)"
+                        title="Algorithm Execution Time - ACO vs Bitonic Variants (90 Nodes)"
                     />
                     {renderMetricsTable(
                         algorithmGroups.group90,
-                        '90-node Bitonic variants',
+                        '90-node ACO vs Bitonic variants',
                     )}
                     <Typography
                         variant="body2"
                         color="text.secondary"
                         sx={{ mt: 2 }}
                     >
-                        Large-scale comparison of different Bitonic sorting
-                        strategies demonstrates the algorithm&apos;s excellent
-                        scalability and how different approaches affect route
-                        quality, distance, and execution time.
+                        Large-scale comparison of ACO metaheuristic and
+                        different Bitonic sorting strategies demonstrates both
+                        algorithms&apos; excellent scalability and how different
+                        approaches affect route quality, distance, and execution
+                        time. ACO shows how metaheuristic approaches can find
+                        good solutions for large problems.
                     </Typography>
                 </TabPanel>
             </Box>
@@ -639,95 +1105,6 @@ export const MetricsDisplay: React.FC = () => {
 
     return (
         <Box>
-            {/* <Paper elevation={3} sx={{ p: 3, mb: 3 }}>
-                <Box
-                    display="flex"
-                    justifyContent="space-between"
-                    alignItems="center"
-                    mb={3}
-                >
-                    <Typography variant="h5" gutterBottom>
-                        Algorithm Performance Metrics
-                    </Typography>
-                    <Button
-                        variant="outlined"
-                        startIcon={<Download />}
-                        onClick={handleExportCSV}
-                        disabled={deduplicatedMetrics.length === 0}
-                    >
-                        Export CSV
-                    </Button>
-                </Box> */}
-
-                {/* {availableNodeCounts.length > 0 && (
-                    <FormControl sx={{ minWidth: 200, mb: 3 }}>
-                        <InputLabel>Node Count</InputLabel>
-                        <Select
-                            value={selectedNodeCount}
-                            label="Node Count"
-                            onChange={(e) =>
-                                setSelectedNodeCount(e.target.value as number)
-                            }
-                        >
-                            {availableNodeCounts.map((count) => (
-                                <MenuItem key={count} value={count}>
-                                    {count} nodes
-                                </MenuItem>
-                            ))}
-                        </Select>
-                    </FormControl>
-                )} */}
-
-                {/* Individual Algorithm Metrics */}
-                {/* <Typography variant="h6" gutterBottom>
-                    Metrics for {selectedNodeCount} Nodes
-                </Typography>
-                {renderMetricsTable(
-                    filteredMetrics,
-                    `${selectedNodeCount} nodes`,
-                )} */}
-
-                {/* Bitonic Variants Comparison */}
-                {/* {bitonicVariants.length > 1 && (
-                    <Box sx={{ mt: 4 }}>
-                        <Typography variant="h6" gutterBottom>
-                            Bitonic Strategy Comparison ({selectedNodeCount}{' '}
-                            Nodes)
-                        </Typography>
-                        <RouteDurationChart
-                            metrics={bitonicVariants}
-                            title={`Bitonic Variants Route Duration (${selectedNodeCount} Nodes)`}
-                        />
-                        <RouteDistanceChart
-                            metrics={bitonicVariants}
-                            title={`Bitonic Variants Route Distance (${selectedNodeCount} Nodes)`}
-                        />
-                        <ExecutionTimeChart
-                            metrics={bitonicVariants}
-                            title={`Bitonic Variants Execution Time (${selectedNodeCount} Nodes)`}
-                        />
-                        {renderMetricsTable(
-                            bitonicVariants,
-                            `Bitonic variants at ${selectedNodeCount} nodes`,
-                        )}
-                    </Box>
-                )} */}
-
-                {/* Execution Time Chart */}
-                {/* <RouteDurationChart
-                    metrics={filteredMetrics}
-                    title={`Route Duration for ${selectedNodeCount} Nodes`}
-                />
-                <RouteDistanceChart
-                    metrics={filteredMetrics}
-                    title={`Route Distance for ${selectedNodeCount} Nodes`}
-                />
-                <ExecutionTimeChart
-                    metrics={filteredMetrics}
-                    title={`Algorithm Execution Time for ${selectedNodeCount} Nodes`}
-                /> */}
-            {/* </Paper> */}
-
             {/* Algorithm Group Comparisons */}
             <Paper elevation={3} sx={{ p: 3 }}>
                 <AlgorithmGroupComparison />

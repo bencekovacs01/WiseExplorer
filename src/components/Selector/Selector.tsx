@@ -97,7 +97,6 @@ const Selector = () => {
                 .filter((key) => selectedCategoryGroups[key]),
         }).then((res) => {
             // setPoiData(res);
-            console.log('res', res?.pois?.length);
             setIsPoiLoaded(true);
             setIsLoading(false);
 
@@ -243,7 +242,6 @@ const Selector = () => {
             }
 
             const routeResult = await response.json();
-            console.log('Bitonic route result', routeResult);
 
             const positions = transformRouteToPositions(
                 routeResult.route,
@@ -383,7 +381,6 @@ const Selector = () => {
                 throw new Error(errorData.message || 'Error calculating route');
             }
             const result = await response.json();
-            console.log('Branch and Bound result', result);
 
             const clientEndTime = performance.now();
             const clientTotalTime = clientEndTime - clientStartTime;
@@ -403,7 +400,6 @@ const Selector = () => {
             }));
 
             const positions = transformRouteToPositions(route, poiData.pois);
-            console.log('positions', positions);
             setPois(positions);
         } catch (error) {
             console.error('Error calculating route:', error);
@@ -458,7 +454,6 @@ const Selector = () => {
             }));
 
             const positions = transformRouteToPositions(route, poiData.pois);
-            console.log('positions', positions);
             setPois(positions);
         } catch (error) {
             console.error('Error calculating route:', error);
