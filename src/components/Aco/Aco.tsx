@@ -1,23 +1,18 @@
-import { useMap, useMapEvents } from 'react-leaflet';
+import { useMap } from 'react-leaflet';
 import L, { LatLngLiteral } from 'leaflet';
-import ReactDOMServer from 'react-dom/server';
 import { Button } from '@mui/material';
-import { SelectAll, Deselect, Route } from '@mui/icons-material';
-import { use, useEffect, useMemo, useState } from 'react';
+import { Route } from '@mui/icons-material';
+import { useEffect, useMemo, useState } from 'react';
 import { useShallow } from 'zustand/shallow';
 import usePOIStore from '@/src/store/poiStore';
 
-import InterestsIcon from '@mui/icons-material/Interests';
 import { useMapContext } from '@/src/contexts/MapContext';
 import { clusterNearbyPOIs } from '@/src/utils/cluster.utils';
 import { calculateHaversineDistance } from '@/src/utils/route.utils';
 
-// import poiData from '../Selector/poiData.json';
 import poiData100 from '../Selector/poiData100.json';
-import distances from './distances.json';
-import ACO from '@/src/services/AcoService';
+import { ACO } from '@/src/services/AcoService';
 import Coordinate from '@/src/models/Coordinate';
-import { IPosition } from '@/src/models/models';
 
 interface POI {
     lat: number;
@@ -36,28 +31,8 @@ const AcoComponent = () => {
         useShallow((state) => [state.loadDistanceMatrix]),
     );
 
-    const [distanceMatrix, setDistanceMatrix] = useState<number[][]>(distances);
     const [pheromones, setPheromones] = useState<number[][]>([]);
     const [antPaths, setAntPaths] = useState<number[][]>([]);
-
-    // const pois = [
-    //     { latitude: 46.49596, longitude: 24.57086 },
-    //     { latitude: 46.58635, longitude: 24.56335 },
-    //     { latitude: 46.55743, longitude: 24.56356 },
-    //     { latitude: 46.58374, longitude: 24.59542 },
-    //     { latitude: 46.56094, longitude: 24.58447 },
-    //     { latitude: 46.57072, longitude: 24.54501 },
-    //     { latitude: 46.50603, longitude: 24.52888 },
-    //     { latitude: 46.53003, longitude: 24.59174 },
-    //     { latitude: 46.5743, longitude: 24.56059 },
-    //     { latitude: 46.54451, longitude: 24.59205 },
-    // ];
-
-    console.log('poiData', poiData100);
-    // const poiList = poiData?.features.map((poi: any) => ({
-    //     latitude: poi?.geometry?.coordinates?.[1],
-    //     longitude: poi?.geometry?.coordinates?.[0],
-    // }));
 
     const poiList = poiData100?.pois.map((poi: any) => ({
         latitude: poi?.latitude,
@@ -65,14 +40,9 @@ const AcoComponent = () => {
     }));
 
     const [data, setData] = useState<Coordinate[]>(poiList);
-    // points?.map
-    //     ? points.map((poi: POI) => new Coordinate(poi.lat, poi.lng))
-    //     : [],
 
-    // Cluster POIs for ACO
     const { clusteredPois } = clusterNearbyPOIs(data);
 
-    // Build clustered distance matrix
     const clusteredDistanceMatrix = useMemo(() => {
         return clusteredPois.map((from) =>
             clusteredPois.map((to) =>
@@ -135,7 +105,6 @@ const AcoComponent = () => {
     //         //     setDistanceMatrix(matrix);
     //         // });
 
-    //         // No cleanup needed, so return nothing
     //     },
     //     [
     //         /*, loadDistanceMatrix*/
