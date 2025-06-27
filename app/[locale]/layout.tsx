@@ -31,7 +31,7 @@ export default async function LocaleLayout({ children, params }: Props) {
     return (
         <html className={`h-full ${openSans.className}`} lang={locale}>
             <head>
-                <title>ExploreWise</title>
+                <title>WiseExplorer</title>
                 <meta name="description" content={'CONTENT'} />
             </head>
             <body className={'flex min-h-full flex-col'}>
