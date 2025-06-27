@@ -125,7 +125,7 @@ export const MapProvider: React.FC<{ children: ReactNode }> = ({
     const [navigationType, setNavigationType] = useState<NavigationType>('car');
 
     const [evaporationRate, setEvaporationRate] = useState<number>(0.5);
-    const [iterations, setIterations] = useState<number>(100);
+    const [iterations, setIterations] = useState<number>(30);
 
     const markersRef = useRef<L.Circle[]>([]);
     const instructionWaypointsRef = useRef<L.LatLng[]>([]);

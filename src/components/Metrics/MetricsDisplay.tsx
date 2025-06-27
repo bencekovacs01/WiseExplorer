@@ -204,7 +204,6 @@ const RouteDistanceChart: React.FC<ChartProps> = ({
     );
 };
 
-// Execution Time Chart Component
 const ExecutionTimeChart: React.FC<ChartProps> = ({
     metrics,
     title = 'Execution Time Comparison',
@@ -359,6 +358,7 @@ export const MetricsDisplay: React.FC = () => {
                 m.nodeCount === 15 &&
                 (m.algorithmName === 'BranchAndBound' ||
                     m.algorithmName === 'DynamicProgramming' ||
+                    m.algorithmName === 'Greedy' ||
                     m.algorithmName === 'ACO' ||
                     m.algorithmName === 'Bitonic'),
         );
@@ -367,6 +367,7 @@ export const MetricsDisplay: React.FC = () => {
             (m) =>
                 m.nodeCount === 30 &&
                 (m.algorithmName === 'DynamicProgramming' ||
+                    m.algorithmName === 'Greedy' ||
                     m.algorithmName === 'ACO' ||
                     m.algorithmName === 'Bitonic'),
         );
@@ -374,7 +375,9 @@ export const MetricsDisplay: React.FC = () => {
         groups.group90 = deduplicatedMetrics.filter(
             (m) =>
                 m.nodeCount === 90 &&
-                (m.algorithmName === 'ACO' || m.algorithmName === 'Bitonic'),
+                (m.algorithmName === 'ACO' ||
+                    m.algorithmName === 'Greedy' ||
+                    m.algorithmName === 'Bitonic'),
         );
 
         return groups;
@@ -1006,17 +1009,6 @@ export const MetricsDisplay: React.FC = () => {
                         algorithmGroups.group15,
                         '15-node comparison',
                     )}
-                    <Typography
-                        variant="body2"
-                        color="text.secondary"
-                        sx={{ mt: 2 }}
-                    >
-                        This comparison shows the trade-offs between optimal
-                        algorithms (Branch-and-Bound, Dynamic Programming),
-                        metaheuristic (ACO), and the heuristic Bitonic algorithm
-                        at a manageable problem size. Note the execution time
-                        differences and how they relate to route quality.
-                    </Typography>
                 </TabPanel>
 
                 <TabPanel value={activeTab} index={1}>
@@ -1039,17 +1031,6 @@ export const MetricsDisplay: React.FC = () => {
                         algorithmGroups.group30,
                         '30-node comparison',
                     )}
-                    <Typography
-                        variant="body2"
-                        color="text.secondary"
-                        sx={{ mt: 2 }}
-                    >
-                        At 30 nodes, we can observe the practical limits of
-                        Dynamic Programming compared to ACO and Bitonic&apos;s
-                        scalability. The execution time difference becomes more
-                        pronounced while route quality trade-offs become
-                        evident.
-                    </Typography>
                 </TabPanel>
 
                 <TabPanel value={activeTab} index={2}>
@@ -1058,32 +1039,20 @@ export const MetricsDisplay: React.FC = () => {
                     </Typography>
                     <RouteDurationChart
                         metrics={algorithmGroups.group90}
-                        title="Route Duration Comparison - ACO vs Bitonic Variants (90 Nodes)"
+                        title="Route Duration Comparison (90 Nodes)"
                     />
                     <RouteDistanceChart
                         metrics={algorithmGroups.group90}
-                        title="Route Distance Comparison - ACO vs Bitonic Variants (90 Nodes)"
+                        title="Route Distance Comparison (90 Nodes)"
                     />
                     <ExecutionTimeChart
                         metrics={algorithmGroups.group90}
-                        title="Algorithm Execution Time - ACO vs Bitonic Variants (90 Nodes)"
+                        title="Algorithm Execution Time (90 Nodes)"
                     />
                     {renderMetricsTable(
                         algorithmGroups.group90,
-                        '90-node ACO vs Bitonic variants',
+                        '90-node',
                     )}
-                    <Typography
-                        variant="body2"
-                        color="text.secondary"
-                        sx={{ mt: 2 }}
-                    >
-                        Large-scale comparison of ACO metaheuristic and
-                        different Bitonic sorting strategies demonstrates both
-                        algorithms&apos; excellent scalability and how different
-                        approaches affect route quality, distance, and execution
-                        time. ACO shows how metaheuristic approaches can find
-                        good solutions for large problems.
-                    </Typography>
                 </TabPanel>
             </Box>
         );

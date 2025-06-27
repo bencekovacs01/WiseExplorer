@@ -185,7 +185,7 @@ export class ACO {
                 );
             }
 
-            // await new Promise((resolve) => setTimeout(resolve, 500));
+            // await new Promise((resolve) => setTimeout(resolve, 50));
         }
 
         return { bestTour, bestDistance };

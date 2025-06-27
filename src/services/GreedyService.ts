@@ -1,143 +1,242 @@
 import Coordinate from '../models/Coordinate';
 import Route from '../models/Route';
-import { orsApi } from '../utils/apiWrapper';
-import { calculateRouteMetric } from '../utils/route.utils';
+import { expandClusteredRoute } from '../utils/route.utils';
+import { metricsService } from './MetricsService';
+import { IPoiData } from '../models/models';
+import matrices from '../../matrices_output.json';
+import { clusterNearbyPOIs } from '../utils/cluster.utils';
+import CategoryDurations from '../components/CategorySelector/category_times.json';
 
 /**
  * GreedyService provides methods to find the minimum distance route among a set of points using greedy method.
  */
 class GreedyService {
-    private orsApi = orsApi;
-    private ORS_KEY = process.env.ORS_KEY as string;
+    private categoryDurations: Record<
+        string,
+        Record<string, { duration: number; unit: string }>
+    > = CategoryDurations || {};
 
     /**
-     * Creates an instance of GreedyService.
-     * @throws Will throw an error if the OpenRouteService API key is not set.
-     */
-    constructor() {
-        if (!this.ORS_KEY) {
-            throw new Error('Cannot fetch OpenRouteService API key!');
-        }
-    }
-
-    /**
-     * Finds the minimum distance route among a set of points.
+     * Finds the minimum distance route among a set of points using greedy nearest neighbor.
      * @param pois Array of coordinates representing points of interest.
+     * @param poiMetadata Optional metadata about POIs including category information
      * @returns A promise that resolves to an array of Route objects.
      */
     public async findMinimumDistanceRoute(
         pois: Coordinate[],
+        poiMetadata?: IPoiData[],
     ): Promise<Route[]> {
-        const points = [...pois];
-        let current = points[0];
-        points.splice(0, 1);
+        const startTime = performance.now();
 
-        const route: Coordinate[] = [current];
+        try {
+            const result = await this.findGreedyRoute(pois, poiMetadata);
 
-        while (points.length > 0) {
-            let nearestIndex = -1;
-            let minDistance = Number.MAX_VALUE;
+            const endTime = performance.now();
+            const executionTime = endTime - startTime;
 
-            for (const point of points) {
-                const distance = await this.getRouteDistance(current, point);
-                if (distance < minDistance) {
-                    minDistance = distance;
-                    nearestIndex = points.indexOf(point);
+            metricsService.recordMetric({
+                algorithmName: 'Greedy',
+                nodeCount: pois.length,
+                executionTimeMs: executionTime,
+                routeDistance: result.totalDistance,
+                routeDuration: result.duration,
+                routeVisitTime: result.visitTime,
+                routeTotalTime: result.totalTime,
+                timestamp: Date.now(),
+            });
+
+            return [result];
+        } catch (error) {
+            const endTime = performance.now();
+            const executionTime = endTime - startTime;
+
+            metricsService.recordMetric({
+                algorithmName: 'Greedy',
+                nodeCount: pois.length,
+                executionTimeMs: executionTime,
+                timestamp: Date.now(),
+            });
+
+            throw error;
+        }
+    }
+
+    /**
+     * Gets the distance and duration matrices for a set of coordinates.
+     * @param coordinates Array of coordinates to calculate matrices for
+     * @returns An object containing distance and duration matrices
+     */
+    public async getRouteMatrices(coordinates: Coordinate[]): Promise<{
+        distanceMatrix: number[][];
+        durationMatrix: number[][];
+    }> {
+        return {
+            distanceMatrix: (matrices as any).distanceMatrix,
+            durationMatrix: (matrices as any).durationMatrix,
+        };
+    }
+
+    /**
+     * Internal method to find greedy route using nearest neighbor heuristic.
+     * @param pois Array of coordinates representing points of interest.
+     * @param poiMetadata Optional metadata about POIs
+     * @returns A promise that resolves to a Route object.
+     */
+    private async findGreedyRoute(
+        pois: Coordinate[],
+        poiMetadata?: IPoiData[],
+    ): Promise<Route> {
+        const { clusteredPois, clusteredMetadata } = clusterNearbyPOIs(
+            pois,
+            100,
+            poiMetadata,
+        );
+
+        const matrices = await this.getRouteMatrices(clusteredPois);
+        const distanceMatrix = matrices.distanceMatrix;
+        const durationMatrix = matrices.durationMatrix;
+
+        const n = clusteredPois.length;
+
+        if (n <= 1) {
+            return new Route(clusteredPois, 0);
+        }
+
+        if (n === 2) {
+            const routeCoordinates = [
+                clusteredPois[0],
+                clusteredPois[1],
+                clusteredPois[0],
+            ];
+            const totalDistance = distanceMatrix[0][1] * 2;
+            const totalDuration = durationMatrix[0][1] * 2;
+
+            let visitTime = 0;
+            if (clusteredMetadata && clusteredMetadata.length > 1) {
+                const metadata = clusteredMetadata[1];
+                if (metadata && metadata.clusteredIds) {
+                    for (const origPOIIndex of metadata.clusteredIds) {
+                        const origMetadata = poiMetadata?.[origPOIIndex];
+                        visitTime +=
+                            this.getVisitDuration(
+                                origMetadata?.category,
+                                origMetadata?.subCategory,
+                            ) * 60;
+                    }
                 }
             }
 
-            current = points[nearestIndex];
-            points.splice(nearestIndex, 1);
-            route.push(current);
+            const duration = totalDuration / 60;
+            const totalTime = (duration + visitTime) / 60;
+
+            const route = new Route(
+                routeCoordinates,
+                totalDistance,
+                duration,
+                visitTime,
+                totalTime,
+            );
+
+            return route;
         }
 
-        route.push(route[0]);
-
-        return [new Route(route, await this.getTotalDistance(route))];
-    }
-
-    /**
-     * Calculates the total distance for a given route.
-     * @param route Array of coordinates representing the route.
-     * @returns A promise that resolves to the total distance of the route in meters.
-     */
-    private async getTotalDistance(route: Coordinate[]): Promise<number> {
+        const visited = new Array(n).fill(false);
+        const route: number[] = [0];
+        visited[0] = true;
         let totalDistance = 0;
+        let totalDuration = 0;
 
-        for (let i = 0; i < route.length - 1; i++) {
-            totalDistance += await this.getRouteDistance(
-                route[i],
-                route[i + 1],
-            );
+        let currentIndex = 0;
+
+        for (let step = 1; step < n; step++) {
+            let nearestIndex = -1;
+            let minDistance = Number.MAX_VALUE;
+
+            for (let i = 0; i < n; i++) {
+                if (
+                    !visited[i] &&
+                    distanceMatrix[currentIndex][i] < minDistance
+                ) {
+                    minDistance = distanceMatrix[currentIndex][i];
+                    nearestIndex = i;
+                }
+            }
+
+            visited[nearestIndex] = true;
+            route.push(nearestIndex);
+            totalDistance += distanceMatrix[currentIndex][nearestIndex];
+            totalDuration += durationMatrix[currentIndex][nearestIndex];
+            currentIndex = nearestIndex;
         }
-        return totalDistance;
+
+        route.push(0);
+        totalDistance += distanceMatrix[currentIndex][0];
+        totalDuration += durationMatrix[currentIndex][0];
+
+        const routeCoordinates = route.map((index) => clusteredPois[index]);
+
+        let visitTime = 0;
+        if (clusteredMetadata) {
+            for (let i = 1; i < clusteredMetadata.length - 1; i++) {
+                const metadata = clusteredMetadata[i];
+                if (metadata && metadata.clusteredIds) {
+                    for (const origPOIIndex of metadata.clusteredIds) {
+                        const origMetadata = poiMetadata?.[origPOIIndex];
+                        visitTime +=
+                            this.getVisitDuration(
+                                origMetadata?.category,
+                                origMetadata?.subCategory,
+                            ) * 60;
+                    }
+                }
+            }
+        }
+
+        const duration = totalDuration;
+        const totalTime = duration + visitTime;
+
+        const clusteredRoute = new Route(
+            routeCoordinates,
+            totalDistance,
+            totalDuration + visitTime / 60,
+            visitTime / 60,
+            totalTime / 60,
+        );
+
+        const expandedRoute = expandClusteredRoute(
+            clusteredRoute,
+            clusteredMetadata || [],
+            pois,
+        );
+
+        return expandedRoute;
     }
 
     /**
-     * Fetches the distance between two points from the OpenRouteService API.
-     * @param start The starting coordinate.
-     * @param end The ending coordinate.
-     * @returns A promise that resolves to the distance between the two points in meters.
-     * @throws Will throw an error if the API request fails.
+     * Get visit duration for a POI category
+     * @param category The category of the POI
+     * @param subCategory The sub-category of the POI
+     * @returns Visit duration in minutes, default to 30 if not found
      */
-    private async getRouteDistance(
-        start: Coordinate,
-        end: Coordinate,
-    ): Promise<number> {
-        const startString = `${start.latitude},${start.longitude}`;
-        const endString = `${end.latitude},${end.longitude}`;
+    public getVisitDuration(
+        category?: string | null,
+        subCategory?: string | null,
+    ): number {
+        if (!category || !subCategory) return 0;
 
-        try {
-            const responseData = await this.orsApi.get(
-                '/directions/driving-car',
-                {
-                    start: startString,
-                    end: endString,
-                },
-            );
+        const categoryLower = category.toLowerCase();
+        const subCategoryLower = subCategory.toLowerCase();
 
-            return this.parseDistanceFromResponse(responseData);
-        } catch (error: any) {
-            throw new Error(
-                `Error getting directions: ${
-                    error?.response?.status || error?.response || error?.message
-                }`,
-            );
-        }
-    }
-
-    /**
-     * Parses the distance from the OpenRouteService API response.
-     * @param responseData The response data from the OpenRouteService API.
-     * @returns The distance in meters.
-     * @throws Will throw an error if the response data is not in the expected format.
-     */
-    private parseDistanceFromResponse(responseData: any): number {
-        const features = responseData.features;
-        if (!features || features.length === 0) {
-            console.error('Features property not found or is empty.');
-            throw new Error(
-                'Failed to parse distance from OpenRouteService response.',
-            );
+        if (
+            this.categoryDurations[categoryLower] &&
+            this.categoryDurations[categoryLower][subCategoryLower]
+        ) {
+            const data =
+                this.categoryDurations[categoryLower][subCategoryLower];
+            return data.duration;
         }
 
-        const properties = features[0].properties;
-        if (!properties || !properties.summary) {
-            console.error('Properties or Summary property not found.');
-            throw new Error(
-                'Failed to parse distance from OpenRouteService response.',
-            );
-        }
-
-        const distance = properties.summary.distance;
-        if (typeof distance !== 'number') {
-            console.error('Distance property not found or is not a number.');
-            throw new Error(
-                'Failed to parse distance from OpenRouteService response.',
-            );
-        }
-
-        return distance;
+        return 30;
     }
 }
 

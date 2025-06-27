@@ -17,6 +17,7 @@ import { useMapContext } from '@/src/contexts/MapContext';
 import { IPosition } from '@/src/models/models';
 import { BacktrackingService } from '@/src/services/BacktrackingService';
 import BitonicService, { SortStrategy } from '@/src/services/BitonicService';
+import GreedyService from '@/src/services/GreedyService';
 import Loader from '../Loader/Loader';
 import PerformanceMetrics from '../Comparison/PerformanceMetrics';
 
@@ -35,7 +36,7 @@ const Selector = () => {
 
     const [fetchPois] = usePOIStore(useShallow((state) => [state.fetchPois]));
 
-    const TOTAL = 15; // max 90
+    const TOTAL = 90; // max 90
 
     const data = {
         pois: poiData100.pois?.slice(0, TOTAL) || [],
@@ -61,6 +62,7 @@ const Selector = () => {
         bitonicOI: any | null;
         branchAndBound: any | null;
         dynamicProgramming: any | null;
+        greedy: any | null;
     }>({
         backtracking: null,
         bitonic: null,
@@ -74,6 +76,7 @@ const Selector = () => {
         bitonicOI: null,
         branchAndBound: null,
         dynamicProgramming: null,
+        greedy: null,
     });
 
     const handleAreaSelect = (e: any) => {
@@ -463,7 +466,6 @@ const Selector = () => {
         }
     };
 
-    // Calculate all bitonic variations
     const calculateAllBitonicVariations = async () => {
         if (!poiData || !poiData.pois || !poiData.poiMetadata) {
             console.error('No POI data available to calculate bitonic routes');
@@ -791,10 +793,9 @@ const Selector = () => {
         ].filter((s) => s.time !== undefined);
 
         if (strategies.length === 0) {
-            return SortStrategy.WEST_TO_EAST; // Default if no data
+            return SortStrategy.WEST_TO_EAST;
         }
 
-        // Sort by total route time (fastest first)
         strategies.sort((a, b) => (a.time || Infinity) - (b.time || Infinity));
         return strategies[0].strategy;
     };
@@ -877,10 +878,7 @@ const Selector = () => {
                                 variant="contained"
                                 color="secondary"
                                 onClick={calculateDynamicProgrammingRoute}
-                                disabled={
-                                    runningAlgo !== null
-                                    // ||                                    poiData?.pois?.length > 20
-                                }
+                                disabled={runningAlgo !== null}
                             >
                                 Dynamic Programming Route
                             </Button>
@@ -1181,8 +1179,6 @@ const Selector = () => {
                     </>
                 )}
             </div>
-            <PerformanceMetrics data={performanceData} />
-
             <Loader loading={isLoading} />
         </>
     );
