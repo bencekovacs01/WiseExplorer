@@ -24,6 +24,7 @@ interface ChartProps {
         bitonicOI: BitonicMetric | null;
         branchAndBound: BitonicMetric | null;
         dynamicProgramming: BitonicMetric | null;
+        aroraPTAS: BitonicMetric | null; // Add Arora PTAS
     };
 }
 
@@ -65,6 +66,9 @@ export const ExecutionTimeChart: React.FC<ChartProps> = ({ data }) => {
                     break;
                 case 'dynamicProgramming':
                     name = 'DP';
+                    break;
+                case 'aroraPTAS':
+                    name = 'PTAS';
                     break;
                 default:
                     name = key.charAt(0).toUpperCase() + key.slice(1);
@@ -114,6 +118,9 @@ export const ExecutionTimeChart: React.FC<ChartProps> = ({ data }) => {
                 case 'dynamicProgramming':
                     name = 'DP';
                     break;
+                case 'aroraPTAS':
+                    name = 'PTAS';
+                    break;
                 default:
                     name = key.charAt(0).toUpperCase() + key.slice(1);
             }
@@ -160,6 +167,9 @@ export const ExecutionTimeChart: React.FC<ChartProps> = ({ data }) => {
                     break;
                 case 'dynamicProgramming':
                     name = 'DP';
+                    break;
+                case 'aroraPTAS':
+                    name = 'PTAS';
                     break;
                 default:
                     name = key.charAt(0).toUpperCase() + key.slice(1);

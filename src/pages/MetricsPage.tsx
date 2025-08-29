@@ -33,6 +33,7 @@ const MetricsPage: React.FC = () => {
         const acoNodeCounts = [15, 30, 90];
         const greedyNodeCounts = [15, 30, 90];
         const backtrackingNodeCounts: number[] = [];
+        const ptasNodeCounts = [15, 30, 90]; // Add PTAS testing
 
         const strategies = Object.values(SortStrategy);
 
@@ -150,6 +151,14 @@ const MetricsPage: React.FC = () => {
                             metadata,
                         );
                         batchOutput += `Success\n`;
+                    } else if (algorithmType === 'AroraPTAS') {
+                        const { AroraPTASService } = await import(
+                            '../services/AroraPTASService'
+                        );
+                        const ptasService = new AroraPTASService(0.2); // ε = 0.2
+                        batchOutput += `  Testing Arora PTAS (ε=0.2)... `;
+                        await ptasService.findOptimalRoute(coords, metadata);
+                        batchOutput += `Success\n`;
                     }
                 } catch (error) {
                     batchOutput += `Failed: ${error}\n`;
@@ -175,16 +184,17 @@ const MetricsPage: React.FC = () => {
                 dynamicProgrammingNodeCounts.length +
                 acoNodeCounts.length +
                 greedyNodeCounts.length +
-                backtrackingNodeCounts.length;
+                backtrackingNodeCounts.length +
+                ptasNodeCounts.length; // Add PTAS to total count
             let testsCompleted = 0;
 
             setTestResults(
                 (prev) =>
                     prev +
                     '\nRunning tests for these specific comparison groups using real POI data:\n' +
-                    '- Branch-and-Bound, Dynamic Programming, ACO, Greedy, and Bitonic at 15 nodes\n' +
-                    '- Dynamic Programming, ACO, Greedy, and Bitonic at 30 nodes\n' +
-                    '- ACO, Greedy, and Bitonic variations at 90 nodes\n',
+                    '- Branch-and-Bound, Dynamic Programming, ACO, Greedy, Arora PTAS, and Bitonic at 15 nodes\n' +
+                    '- Dynamic Programming, ACO, Greedy, Arora PTAS, and Bitonic at 30 nodes\n' +
+                    '- ACO, Greedy, Arora PTAS, and Bitonic variations at 90 nodes\n',
             );
 
             for (let i = 0; i < bitonicNodeCounts.length; i++) {
@@ -267,6 +277,22 @@ const MetricsPage: React.FC = () => {
                 await new Promise((resolve) => setTimeout(resolve, 100));
             }
 
+            for (let i = 0; i < ptasNodeCounts.length; i++) {
+                const batchResults = await processOtherAlgorithmsBatch(
+                    ptasNodeCounts[i],
+                    'AroraPTAS',
+                );
+                setTestResults((prev) => prev + batchResults);
+
+                testsCompleted++;
+                const currentProgress = Math.min(
+                    98,
+                    Math.round((testsCompleted / totalTests) * 100),
+                );
+                setProgress(currentProgress);
+                await new Promise((resolve) => setTimeout(resolve, 100));
+            }
+
             for (let i = 0; i < backtrackingNodeCounts.length; i++) {
                 const batchResults = await processOtherAlgorithmsBatch(
                     backtrackingNodeCounts[i],
@@ -313,13 +339,13 @@ const MetricsPage: React.FC = () => {
                 <Box component="ul" sx={{ mb: 2 }}>
                     <Typography component="li">
                         15 POIs: Branch-and-Bound, Dynamic Programming, ACO,
-                        Greedy, and Bitonic
+                        Greedy, Arora PTAS, and Bitonic
                     </Typography>
                     <Typography component="li">
-                        30 POIs: Dynamic Programming, ACO, Greedy, and Bitonic
+                        30 POIs: Dynamic Programming, ACO, Greedy, Arora PTAS, and Bitonic
                     </Typography>
                     <Typography component="li">
-                        90 POIs: ACO, Greedy, and All Bitonic variants
+                        90 POIs: ACO, Greedy, Arora PTAS, and All Bitonic variants
                     </Typography>
                 </Box>
 

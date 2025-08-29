@@ -18,6 +18,7 @@ import { IPosition } from '@/src/models/models';
 import { BacktrackingService } from '@/src/services/BacktrackingService';
 import BitonicService, { SortStrategy } from '@/src/services/BitonicService';
 import GreedyService from '@/src/services/GreedyService';
+import { AroraPTASService } from '@/src/services/AroraPTASService';
 import Loader from '../Loader/Loader';
 import PerformanceMetrics from '../Comparison/PerformanceMetrics';
 
@@ -63,6 +64,7 @@ const Selector = () => {
         branchAndBound: any | null;
         dynamicProgramming: any | null;
         greedy: any | null;
+        aroraPTAS: any | null;
     }>({
         backtracking: null,
         bitonic: null,
@@ -77,6 +79,7 @@ const Selector = () => {
         branchAndBound: null,
         dynamicProgramming: null,
         greedy: null,
+        aroraPTAS: null,
     });
 
     const handleAreaSelect = (e: any) => {
@@ -460,6 +463,59 @@ const Selector = () => {
             setPois(positions);
         } catch (error) {
             console.error('Error calculating route:', error);
+        } finally {
+            setIsLoading(false);
+            setRunningAlgo(null);
+        }
+    };
+
+    const calculateAroraPTASRoute = async () => {
+        if (!poiData || !poiData.pois || !poiData.poiMetadata) {
+            console.error('No POI data available to calculate route');
+            return;
+        }
+        setRunningAlgo('arora-ptas');
+        setIsLoading(true);
+
+        const clientStartTime = performance.now();
+
+        try {
+            const coordinates = poiData.pois.map((poi: any) => ({
+                latitude: poi.latitude,
+                longitude: poi.longitude,
+            }));
+
+            const ptasService = new AroraPTASService(0.2); // ε = 0.2
+            const route = await ptasService.findOptimalRoute(
+                coordinates,
+                poiData.poiMetadata,
+            );
+
+            const clientEndTime = performance.now();
+            const clientTotalTime = clientEndTime - clientStartTime;
+
+            // Get metrics from our metrics service (simplified approach)
+            setPerformanceData((prev) => ({
+                ...prev,
+                aroraPTAS: {
+                    executionTimeMs: clientTotalTime,
+                    memoryUsageMB: 0, // PTAS doesn't track memory usage in our implementation
+                    algorithm: 'Arora PTAS',
+                    pointCount: coordinates.length,
+                    timestamp: Date.now(),
+                    clientTotalTime,
+                    strategy: `ε=0.2`,
+                    routeDistance: route.totalDistance,
+                    routeDuration: route.duration,
+                    routeVisitTime: route.visitTime,
+                    routeTotalTime: route.totalTime,
+                },
+            }));
+
+            const positions = transformRouteToPositions(route, poiData.pois);
+            setPois(positions);
+        } catch (error) {
+            console.error('Error calculating Arora PTAS route:', error);
         } finally {
             setIsLoading(false);
             setRunningAlgo(null);
@@ -1176,6 +1232,18 @@ const Selector = () => {
                                 </Button>
                             </Tooltip>
                         </ButtonGroup>
+
+                        <Tooltip title="Arora's PTAS for Euclidean TSP (ε=0.2)">
+                            <Button
+                                variant="contained"
+                                color="secondary"
+                                onClick={calculateAroraPTASRoute}
+                                disabled={runningAlgo !== null}
+                                startIcon={<Speed />}
+                            >
+                                Arora PTAS
+                            </Button>
+                        </Tooltip>
                     </>
                 )}
             </div>

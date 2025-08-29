@@ -44,6 +44,7 @@ interface MetricsProps {
         bitonicOI: BitonicMetric | null; // Outside-In
         branchAndBound: BitonicMetric | null;
         dynamicProgramming: BitonicMetric | null;
+        aroraPTAS: BitonicMetric | null; // Add Arora PTAS
     };
 }
 
@@ -58,7 +59,7 @@ const PerformanceMetrics: React.FC<MetricsProps> = ({ data }) => {
         data.bitonicIO ||
         data.bitonicOI;
 
-    if (!data.backtracking && !data.bitonic && !hasBitonicVariations) {
+    if (!data.backtracking && !data.bitonic && !hasBitonicVariations && !data.aroraPTAS) {
         return null;
     }
 
@@ -296,6 +297,68 @@ const PerformanceMetrics: React.FC<MetricsProps> = ({ data }) => {
             )}
 
             {data.dynamicProgramming &&
+                (data.bitonic || hasBitonicVariations || data.aroraPTAS) && (
+                    <Divider sx={{ my: 1 }} />
+                )}
+
+            {data.aroraPTAS && (
+                <Box mb={2}>
+                    <Typography variant="subtitle1">
+                        Arora PTAS Algorithm
+                    </Typography>
+                    <Typography variant="body2">
+                        Points: {data.aroraPTAS.pointCount}
+                    </Typography>
+                    <Typography variant="body2">
+                        Server execution:{' '}
+                        {formatTime(data.aroraPTAS.executionTimeMs)}
+                    </Typography>
+                    <Typography variant="body2">
+                        Total time:{' '}
+                        {formatTime(data.aroraPTAS.clientTotalTime)}
+                    </Typography>
+                    <Typography variant="body2">
+                        Memory used: {data.aroraPTAS.memoryUsageMB} MB
+                    </Typography>
+                    {data.aroraPTAS.strategy && (
+                        <Typography variant="body2">
+                            Variant: {data.aroraPTAS.strategy}
+                        </Typography>
+                    )}
+
+                    {data?.aroraPTAS?.routeDistance && (
+                        <>
+                            <Divider sx={{ my: 0.5 }} />
+                            <Typography variant="body2">
+                                Total distance:{' '}
+                                {formatDistance(
+                                    data?.aroraPTAS?.routeDistance,
+                                )}
+                            </Typography>
+                            <Typography variant="body2">
+                                Travel time:{' '}
+                                {formatDuration(
+                                    data.aroraPTAS.routeDuration,
+                                )}
+                            </Typography>
+                            <Typography variant="body2">
+                                Visit time:{' '}
+                                {formatDuration(
+                                    data.aroraPTAS.routeVisitTime,
+                                )}
+                            </Typography>
+                            <Typography variant="body2">
+                                Route total time:{' '}
+                                {formatDuration(
+                                    data.aroraPTAS.routeTotalTime,
+                                )}
+                            </Typography>
+                        </>
+                    )}
+                </Box>
+            )}
+
+            {(data.aroraPTAS || data.dynamicProgramming) &&
                 (data.bitonic || hasBitonicVariations) && (
                     <Divider sx={{ my: 1 }} />
                 )}

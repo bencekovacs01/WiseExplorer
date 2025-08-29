@@ -360,7 +360,8 @@ export const MetricsDisplay: React.FC = () => {
                     m.algorithmName === 'DynamicProgramming' ||
                     m.algorithmName === 'Greedy' ||
                     m.algorithmName === 'ACO' ||
-                    m.algorithmName === 'Bitonic'),
+                    m.algorithmName === 'Bitonic' ||
+                    m.algorithmName === 'Arora PTAS'),
         );
 
         groups.group30 = deduplicatedMetrics.filter(
@@ -369,7 +370,8 @@ export const MetricsDisplay: React.FC = () => {
                 (m.algorithmName === 'DynamicProgramming' ||
                     m.algorithmName === 'Greedy' ||
                     m.algorithmName === 'ACO' ||
-                    m.algorithmName === 'Bitonic'),
+                    m.algorithmName === 'Bitonic' ||
+                    m.algorithmName === 'Arora PTAS'),
         );
 
         groups.group90 = deduplicatedMetrics.filter(
@@ -377,7 +379,8 @@ export const MetricsDisplay: React.FC = () => {
                 m.nodeCount === 90 &&
                 (m.algorithmName === 'ACO' ||
                     m.algorithmName === 'Greedy' ||
-                    m.algorithmName === 'Bitonic'),
+                    m.algorithmName === 'Bitonic' ||
+                    m.algorithmName === 'Arora PTAS'),
         );
 
         return groups;
@@ -481,6 +484,9 @@ export const MetricsDisplay: React.FC = () => {
                     break;
                 case 'Bitonic Variants':
                     section += `A Bitonic algoritmus különböző rendezési stratégiái (W→E, E→W, S→N, N→S, CW, CCW, I→O, O→I) gyors heurisztikus megoldásokat nyújtanak. Az algoritmus a pontok geometriai elrendezését használja ki az útvonal optimalizálásához.\n\n`;
+                    break;
+                case 'Arora PTAS':
+                    section += `Az Arora PTAS (Polynomial-Time Approximation Scheme) egy (1+ε)-approximációs algoritmus az Euklideszi TSP problémára. Az algoritmus ε=0.2 paraméterrel polinom időben garantált közelítési arányú megoldást biztosít, grid dekompozíció és portál-alapú dinamikus programozás segítségével.\n\n`;
                     break;
             }
 
@@ -991,7 +997,7 @@ export const MetricsDisplay: React.FC = () => {
                 <TabPanel value={activeTab} index={0}>
                     <Typography variant="h6" gutterBottom>
                         Branch-and-Bound vs Dynamic Programming vs ACO vs
-                        Bitonic (15 Nodes)
+                        Bitonic vs Arora PTAS (15 Nodes)
                     </Typography>
                     <RouteDurationChart
                         metrics={algorithmGroups.group15}
@@ -1013,7 +1019,7 @@ export const MetricsDisplay: React.FC = () => {
 
                 <TabPanel value={activeTab} index={1}>
                     <Typography variant="h6" gutterBottom>
-                        Dynamic Programming vs ACO vs Bitonic (30 Nodes)
+                        Dynamic Programming vs ACO vs Bitonic vs Arora PTAS (30 Nodes)
                     </Typography>
                     <RouteDurationChart
                         metrics={algorithmGroups.group30}
@@ -1035,7 +1041,7 @@ export const MetricsDisplay: React.FC = () => {
 
                 <TabPanel value={activeTab} index={2}>
                     <Typography variant="h6" gutterBottom>
-                        ACO vs Bitonic Strategy Comparison (90 Nodes)
+                        ACO vs Bitonic vs Arora PTAS Strategy Comparison (90 Nodes)
                     </Typography>
                     <RouteDurationChart
                         metrics={algorithmGroups.group90}

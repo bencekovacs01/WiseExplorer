@@ -25,6 +25,7 @@ interface ChartProps {
         bitonicOI: BitonicMetric | null; // Outside-In
         branchAndBound: BitonicMetric | null;
         dynamicProgramming: BitonicMetric | null;
+        aroraPTAS: BitonicMetric | null; // Add Arora PTAS
     };
 }
 
@@ -98,6 +99,10 @@ export const AlgorithmComparisonRadar: React.FC<ChartProps> = ({ data }) => {
                 'executionTimeMs',
                 data.dynamicProgramming?.executionTimeMs,
             ),
+            aroraPTAS: normalizeData(
+                'executionTimeMs',
+                data.aroraPTAS?.executionTimeMs,
+            ),
         },
         {
             metric: 'Memory Efficiency',
@@ -145,6 +150,10 @@ export const AlgorithmComparisonRadar: React.FC<ChartProps> = ({ data }) => {
                 'memoryUsageMB',
                 data.dynamicProgramming?.memoryUsageMB,
             ),
+            aroraPTAS: normalizeData(
+                'memoryUsageMB',
+                data.aroraPTAS?.memoryUsageMB,
+            ),
         },
         {
             metric: 'Route Efficiency',
@@ -191,6 +200,10 @@ export const AlgorithmComparisonRadar: React.FC<ChartProps> = ({ data }) => {
             dynamicProgramming: normalizeData(
                 'routeDistance',
                 data.dynamicProgramming?.routeDistance,
+            ),
+            aroraPTAS: normalizeData(
+                'routeDistance',
+                data.aroraPTAS?.routeDistance,
             ),
         },
     ];
@@ -301,6 +314,15 @@ export const AlgorithmComparisonRadar: React.FC<ChartProps> = ({ data }) => {
                             dataKey="bitonicOI"
                             stroke="#2196f3"
                             fill="#2196f3"
+                            fillOpacity={0.6}
+                        />
+                    )}
+                    {data.aroraPTAS && (
+                        <Radar
+                            name="Arora PTAS"
+                            dataKey="aroraPTAS"
+                            stroke="#e91e63"
+                            fill="#e91e63"
                             fillOpacity={0.6}
                         />
                     )}
