@@ -23,177 +23,172 @@ import Parameters from '../Parameters/Parameters';
 import AcoComponent from '../Aco/Aco';
 
 interface IRouteResponse {
-    route: IRoute[];
-    totalDistance: number;
+  route: IRoute[];
+  totalDistance: number;
 }
 
 interface IRoute {
-    latitude: number;
-    longitude: number;
+  latitude: number;
+  longitude: number;
 }
 
 const OpenStreetMap = () => {
-    const [routeResponse, setRouteResponse] = useState<IRouteResponse>();
-    const [loading, setLoading] = useState<boolean>(false);
-    const [error, setError] = useState<string | null>(null);
+  const [routeResponse, setRouteResponse] = useState<IRouteResponse>();
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
 
-    const [findRouteGreedy, categories] = usePOIStore(
-        useShallow((state) => [state.findRouteGreedy, state.categories]),
-    );
+  const [findRouteGreedy, categories] = usePOIStore(
+    useShallow((state) => [state.findRouteGreedy, state.categories]),
+  );
 
-    const [positions, setPositions] = useState<IPosition[]>([]);
-    const [currentPositionVisible, setcurrentPositionVisible] =
-        useState<boolean>(false);
+  const [positions, setPositions] = useState<IPosition[]>([]);
+  const [currentPositionVisible, setcurrentPositionVisible] =
+    useState<boolean>(false);
 
-    const { currentPosition, mapRef, pois, mainContentStyle } = useMapContext();
+  const { currentPosition, mapRef, pois, mainContentStyle } = useMapContext();
 
-    const mapContainerRef = useRef<L.Map[] | null>([]);
+  const mapContainerRef = useRef<L.Map[] | null>([]);
 
-    const flyToCurrentPosition = () => {
-        if (currentPosition) {
-            if (mapRef?.current) {
-                mapRef?.current?.[0]?.flyTo?.(
-                    currentPosition.coords,
-                    mapRef?.current?.[0]?.getZoom(),
-                    {
-                        animate: true,
-                        duration: 0.5,
-                    },
-                );
-            }
-        } else {
-            alert('Current location is not available.');
-        }
+  const flyToCurrentPosition = () => {
+    if (currentPosition) {
+      if (mapRef?.current) {
+        mapRef?.current?.[0]?.flyTo?.(
+          currentPosition.coords,
+          mapRef?.current?.[0]?.getZoom(),
+          {
+            animate: true,
+            duration: 0.5,
+          },
+        );
+      }
+    } else {
+      alert('Current location is not available.');
+    }
+  };
+
+  const isInViewport = useCallback(() => {
+    const map = mapRef.current?.[0];
+    if (map && currentPosition) {
+      const bounds = map?.getBounds();
+      return bounds.contains(
+        L.latLng(currentPosition.coords.lat, currentPosition.coords.lng),
+      );
+    }
+    return false;
+  }, [currentPosition, mapRef]);
+
+  // useEffect(() => {
+  //     findRouteGreedy(greedyPois).then((response) => {
+  //         setRouteResponse(response?.[0]);
+  //     });
+  // }, [findRouteGreedy]);
+
+  useEffect(() => {
+    const map = mapRef?.current?.[0];
+    if (map) {
+      map.on('moveend', () => {
+        const inViewport = isInViewport();
+        setcurrentPositionVisible(inViewport);
+      });
+    }
+
+    return () => {
+      if (map) {
+        map.off('moveend', () => {
+          const inViewport = isInViewport();
+          setcurrentPositionVisible(inViewport);
+        });
+      }
     };
+  }, [isInViewport, mapRef]);
 
-    const isInViewport = useCallback(() => {
-        const map = mapRef.current?.[0];
-        if (map && currentPosition) {
-            const bounds = map?.getBounds();
-            return bounds.contains(
-                L.latLng(
-                    currentPosition.coords.lat,
-                    currentPosition.coords.lng,
-                ),
-            );
-        }
-        return false;
-    }, [currentPosition, mapRef]);
+  useEffect(() => {
+    if (routeResponse) {
+      const newPositions = routeResponse.route.map((route) => ({
+        coords: { lat: route.longitude, lng: route.latitude },
+        text: 'POI Description!',
+      }));
+      setPositions((currentPositions) => [
+        ...currentPositions,
+        ...newPositions,
+      ]);
+    }
+  }, [routeResponse]);
 
-    // useEffect(() => {
-    //     findRouteGreedy(greedyPois).then((response) => {
-    //         setRouteResponse(response?.[0]);
-    //     });
-    // }, [findRouteGreedy]);
+  const renderGpsIcon = () => {
+    if (!currentPosition) return <GpsOff />;
 
-    useEffect(() => {
-        const map = mapRef?.current?.[0];
-        if (map) {
-            map.on('moveend', () => {
-                const inViewport = isInViewport();
-                setcurrentPositionVisible(inViewport);
-            });
-        }
+    return currentPositionVisible ? <GpsFixed /> : <GpsNotFixed />;
+  };
 
-        return () => {
-            if (map) {
-                map.off('moveend', () => {
-                    const inViewport = isInViewport();
-                    setcurrentPositionVisible(inViewport);
-                });
-            }
-        };
-    }, [isInViewport, mapRef]);
+  return (
+    <div
+      style={{
+        height: '100%',
+        width: '100%',
+        overflow: 'hidden',
+        borderWidth: 1,
+        borderColor: 'black',
+        ...mainContentStyle,
+      }}
+    >
+      <MapContainer
+        ref={mapContainerRef as any}
+        style={{
+          height: '100%',
+          width: '100%',
+          borderColor: 'black',
+        }}
+        center={[46.5417, 24.5617]}
+        zoom={13}
+        scrollWheelZoom={true}
+      >
+        <TileLayer
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        />
 
-    useEffect(() => {
-        if (routeResponse) {
-            const newPositions = routeResponse.route.map((route) => ({
-                coords: { lat: route.longitude, lng: route.latitude },
-                text: 'POI Description!',
-            }));
-            setPositions((currentPositions) => [
-                ...currentPositions,
-                ...newPositions,
-            ]);
-        }
-    }, [routeResponse]);
+        {positions?.length > 1 && <RoutingControl positions={positions} />}
 
-    const renderGpsIcon = () => {
-        if (!currentPosition) return <GpsOff />;
+        {pois?.length > 1 && <RoutingControl positions={pois} />}
 
-        return currentPositionVisible ? <GpsFixed /> : <GpsNotFixed />;
-    };
+        <Selector />
 
-    return (
-        <div
-            style={{
-                height: '100%',
-                width: '100%',
-                overflow: 'hidden',
-                borderWidth: 1,
-                borderColor: 'black',
-                ...mainContentStyle,
-            }}
+        <SearchBar />
+
+        <NavigationSelector />
+
+        {/* <Parameters /> */}
+
+        <AcoComponent />
+
+        <PositionTracker />
+
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={flyToCurrentPosition}
+          style={{
+            position: 'absolute',
+            bottom: '40px',
+            right: '10px',
+            zIndex: 1000,
+            height: '50px',
+            width: '50px',
+            borderRadius: '50%',
+            padding: 0,
+            minWidth: 0,
+          }}
         >
-            <MapContainer
-                ref={mapContainerRef as any}
-                style={{
-                    height: '100%',
-                    width: '100%',
-                    borderColor: 'black',
-                }}
-                center={[46.5417, 24.5617]}
-                zoom={13}
-                scrollWheelZoom={true}
-            >
-                <TileLayer
-                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                />
+          {renderGpsIcon()}
+        </Button>
+      </MapContainer>
 
-                {positions?.length > 1 && (
-                    <RoutingControl positions={positions} />
-                )}
+      <CategorySelector />
 
-                {pois?.length > 1 && <RoutingControl positions={pois} />}
-
-                <Selector />
-
-                <SearchBar />
-
-                <NavigationSelector />
-
-                {/* <Parameters /> */}
-
-                <AcoComponent />
-
-                <PositionTracker />
-
-                <Button
-                    variant="contained"
-                    color="primary"
-                    onClick={flyToCurrentPosition}
-                    style={{
-                        position: 'absolute',
-                        bottom: '40px',
-                        right: '10px',
-                        zIndex: 1000,
-                        height: '50px',
-                        width: '50px',
-                        borderRadius: '50%',
-                        padding: 0,
-                        minWidth: 0,
-                    }}
-                >
-                    {renderGpsIcon()}
-                </Button>
-            </MapContainer>
-
-            <CategorySelector />
-
-            {loading && <Loader loading />}
-        </div>
-    );
+      {loading && <Loader loading />}
+    </div>
+  );
 };
 
 export default OpenStreetMap;

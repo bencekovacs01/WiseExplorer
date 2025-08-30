@@ -1,20 +1,12 @@
 {
   "type": "FeatureCollection",
-  "bbox": [
-    24.547473,
-    46.53334,
-    24.551561,
-    46.535882
-  ],
+  "bbox": [24.547473, 46.53334, 24.551561, 46.535882],
   "features": [
     {
       "type": "Feature",
       "geometry": {
         "type": "Point",
-        "coordinates": [
-          24.549968,
-          46.53334
-        ]
+        "coordinates": [24.549968, 46.53334]
       },
       "properties": {
         "osm_id": 23866134,
@@ -32,10 +24,7 @@
       "type": "Feature",
       "geometry": {
         "type": "Point",
-        "coordinates": [
-          24.550351,
-          46.533924
-        ]
+        "coordinates": [24.550351, 46.533924]
       },
       "properties": {
         "osm_id": 89069714,
@@ -56,10 +45,7 @@
       "type": "Feature",
       "geometry": {
         "type": "Point",
-        "coordinates": [
-          24.548274,
-          46.535517
-        ]
+        "coordinates": [24.548274, 46.535517]
       },
       "properties": {
         "osm_id": 93659364,
@@ -80,10 +66,7 @@
       "type": "Feature",
       "geometry": {
         "type": "Point",
-        "coordinates": [
-          24.5496,
-          46.535258
-        ]
+        "coordinates": [24.5496, 46.535258]
       },
       "properties": {
         "osm_id": 183258638,
@@ -101,10 +84,7 @@
       "type": "Feature",
       "geometry": {
         "type": "Point",
-        "coordinates": [
-          24.549096,
-          46.533442
-        ]
+        "coordinates": [24.549096, 46.533442]
       },
       "properties": {
         "osm_id": 258668249,
@@ -130,10 +110,7 @@
       "type": "Feature",
       "geometry": {
         "type": "Point",
-        "coordinates": [
-          24.550848,
-          46.533835
-        ]
+        "coordinates": [24.550848, 46.533835]
       },
       "properties": {
         "osm_id": 273539990,
@@ -151,10 +128,7 @@
       "type": "Feature",
       "geometry": {
         "type": "Point",
-        "coordinates": [
-          24.550094,
-          46.533629
-        ]
+        "coordinates": [24.550094, 46.533629]
       },
       "properties": {
         "osm_id": 539874504,
@@ -175,10 +149,7 @@
       "type": "Feature",
       "geometry": {
         "type": "Point",
-        "coordinates": [
-          24.551561,
-          46.533584
-        ]
+        "coordinates": [24.551561, 46.533584]
       },
       "properties": {
         "osm_id": 689291317,
@@ -196,10 +167,7 @@
       "type": "Feature",
       "geometry": {
         "type": "Point",
-        "coordinates": [
-          24.550537,
-          46.533655
-        ]
+        "coordinates": [24.550537, 46.533655]
       },
       "properties": {
         "osm_id": 913972146,
@@ -217,10 +185,7 @@
       "type": "Feature",
       "geometry": {
         "type": "Point",
-        "coordinates": [
-          24.55072,
-          46.533791
-        ]
+        "coordinates": [24.55072, 46.533791]
       },
       "properties": {
         "osm_id": 979161309,
@@ -244,10 +209,7 @@
       "type": "Feature",
       "geometry": {
         "type": "Point",
-        "coordinates": [
-          24.549285,
-          46.533627
-        ]
+        "coordinates": [24.549285, 46.533627]
       },
       "properties": {
         "osm_id": 1073560616,
@@ -265,10 +227,7 @@
       "type": "Feature",
       "geometry": {
         "type": "Point",
-        "coordinates": [
-          24.547473,
-          46.535882
-        ]
+        "coordinates": [24.547473, 46.535882]
       },
       "properties": {
         "osm_id": 1364720027,
@@ -289,10 +248,7 @@
       "type": "Feature",
       "geometry": {
         "type": "Point",
-        "coordinates": [
-          24.549533,
-          46.533452
-        ]
+        "coordinates": [24.549533, 46.533452]
       },
       "properties": {
         "osm_id": 9484271488,
@@ -314,10 +270,7 @@
       "type": "Feature",
       "geometry": {
         "type": "Point",
-        "coordinates": [
-          24.550653,
-          46.533575
-        ]
+        "coordinates": [24.550653, 46.533575]
       },
       "properties": {
         "osm_id": 9484271489,
@@ -344,21 +297,12 @@
       "request": "pois",
       "geometry": {
         "bbox": [
-          [
-            24.546890258789062,
-            46.533329032943236
-          ],
-          [
-            24.57178115844727,
-            46.543542981979535
-          ]
+          [24.546890258789062, 46.533329032943236],
+          [24.57178115844727, 46.543542981979535]
         ],
         "geojson": {
           "type": "Point",
-          "coordinates": [
-            24.546890258789062,
-            46.533329032943236
-          ]
+          "coordinates": [24.546890258789062, 46.533329032943236]
         },
         "buffer": 500
       }

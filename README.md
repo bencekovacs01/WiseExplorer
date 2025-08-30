@@ -5,6 +5,7 @@ A sophisticated route optimization platform that implements and compares multipl
 ## 🌟 Features
 
 ### Interactive Map Interface
+
 - **Real-time Route Visualization**: Interactive map powered by Leaflet showing optimized routes
 - **POI Management**: Dynamic loading and visualization of Points of Interest
 - **Area Selection**: Click and drag to select geographical areas for route optimization
@@ -13,24 +14,28 @@ A sophisticated route optimization platform that implements and compares multipl
 ### Advanced Routing Algorithms
 
 #### Exact Algorithms (Optimal Solutions)
+
 - **Branch and Bound**: Optimal TSP solution using intelligent pruning
 - **Dynamic Programming**: Held-Karp algorithm for exact TSP solutions
 - **Backtracking**: Exhaustive search with optimization
 
 #### Heuristic Algorithms (Scalable Solutions)
+
 - **Bitonic TSP**: Fast approximation algorithm with 8 strategic variants:
   - West→East / East→West
-  - South→North / North→South  
+  - South→North / North→South
   - Clockwise / Counterclockwise
   - Inside-Out / Outside-In
 
 ### Comprehensive Performance Analysis
+
 - **Execution Time Tracking**: Precise algorithm performance measurement
 - **Route Quality Metrics**: Distance, duration, and efficiency analysis
 - **Memory Usage Monitoring**: Resource consumption tracking
 - **Comparative Visualizations**: Side-by-side algorithm comparisons
 
 ### Advanced Metrics System
+
 - **Real-time Data Collection**: Automatic metrics recording during algorithm execution
 - **Interactive Charts**: Bar charts for route duration, distance, and execution time
 - **Group Comparisons**: Structured analysis across different problem sizes:
@@ -42,6 +47,7 @@ A sophisticated route optimization platform that implements and compares multipl
 ## 🛠️ Technology Stack
 
 ### Frontend
+
 - **Next.js 15** - React framework with App Router
 - **TypeScript** - Type-safe development
 - **Material-UI (MUI)** - Modern component library
@@ -50,11 +56,13 @@ A sophisticated route optimization platform that implements and compares multipl
 - **Zustand** - State management
 
 ### Backend & APIs
+
 - **Express.js** - API server
 - **OpenRouteService** - Real routing and matrix calculations
 - **Node.js** - Server runtime
 
 ### Development Tools
+
 - **ESLint** - Code linting
 - **Prettier** - Code formatting
 - **Tailwind CSS** - Utility-first styling
@@ -63,7 +71,8 @@ A sophisticated route optimization platform that implements and compares multipl
 ## 🚀 Getting Started
 
 ### Prerequisites
-- Node.js 18+ 
+
+- Node.js 18+
 - npm or yarn
 - OpenRouteService API key (free at [openrouteservice.org](https://openrouteservice.org/dev/#/signup))
 - SSL certificates for HTTPS development (see setup instructions below)
@@ -71,21 +80,24 @@ A sophisticated route optimization platform that implements and compares multipl
 ### Installation
 
 1. **Clone the repository**
+
    ```bash
    git clone https://github.com/yourusername/WiseExplorer.git
    cd WiseExplorer
    ```
 
 2. **Install dependencies**
+
    ```bash
    npm install
    ```
 
 3. **Environment Setup**
+
    ```bash
    cp .env.example .env.local
    ```
-   
+
    **Configure your environment variables in `.env.local`:**
    - Add your OpenRouteService API key:
      ```
@@ -93,13 +105,15 @@ A sophisticated route optimization platform that implements and compares multipl
      ```
 
 4. **SSL Certificates Setup (Required for HTTPS)**
-   
+
    Generate self-signed certificates for local HTTPS development:
+
    ```bash
    openssl req -x509 -newkey rsa:4096 -keyout server.key -out server.cert -days 365 -nodes
    ```
-   
+
    When prompted, you can use these example values:
+
    ```
    Country Name: US
    State: Your State
@@ -109,36 +123,42 @@ A sophisticated route optimization platform that implements and compares multipl
    Common Name: localhost
    Email: your-email@example.com
    ```
-   
+
    **Note**: Self-signed certificates will show browser security warnings, but are sufficient for local development and mobile device testing.
 
 5. **Start development server**
-5. **Start development server**
+6. **Start development server**
+
    ```bash
    npm run dev
    ```
 
-6. **Open browser**
+7. **Open browser**
    Navigate to `http://localhost:3000`
 
 ### Production Build
+
 ```bash
 npm run build
 npm start
 ```
 
 ### HTTPS Development
+
 For development with HTTPS (useful for mobile testing and location services):
+
 ```bash
 npm run https
 ```
 
 **Prerequisites for HTTPS:**
+
 - SSL certificates must be generated (see step 4 above)
 - Navigate to `https://localhost:3000`
 - Accept the browser security warning for self-signed certificates
 
 **Why HTTPS is needed:**
+
 - Required for geolocation services on mobile devices
 - Needed for testing PWA features
 - Enables secure API access from mobile browsers
@@ -147,12 +167,12 @@ npm run https
 
 ### Performance Characteristics
 
-| Algorithm | Time Complexity | Space Complexity | Solution Quality | Scalability |
-|-----------|----------------|------------------|------------------|-------------|
-| Branch & Bound | O(n!) worst case | O(n) | Optimal | Small datasets (≤20 nodes) |
-| Dynamic Programming | O(n²2ⁿ) | O(n2ⁿ) | Optimal | Medium datasets (≤30 nodes) |
-| Backtracking | O(n!) | O(n) | Optimal | Small datasets (≤15 nodes) |
-| Bitonic TSP | O(n log n) | O(n) | Approximation | Large datasets (90+ nodes) |
+| Algorithm           | Time Complexity  | Space Complexity | Solution Quality | Scalability                 |
+| ------------------- | ---------------- | ---------------- | ---------------- | --------------------------- |
+| Branch & Bound      | O(n!) worst case | O(n)             | Optimal          | Small datasets (≤20 nodes)  |
+| Dynamic Programming | O(n²2ⁿ)          | O(n2ⁿ)           | Optimal          | Medium datasets (≤30 nodes) |
+| Backtracking        | O(n!)            | O(n)             | Optimal          | Small datasets (≤15 nodes)  |
+| Bitonic TSP         | O(n log n)       | O(n)             | Approximation    | Large datasets (90+ nodes)  |
 
 ### Use Case Recommendations
 
@@ -163,17 +183,20 @@ npm run https
 ## 🎯 Usage Guide
 
 ### Basic Route Planning
+
 1. **Select Area**: Click and drag on the map to define your area of interest
 2. **Load POIs**: System automatically loads nearby Points of Interest
 3. **Choose Algorithm**: Select from available routing algorithms
 4. **View Results**: Analyze the optimized route and performance metrics
 
 ### Algorithm Comparison
+
 1. **Run Multiple Algorithms**: Test different algorithms on the same POI set
 2. **Compare Results**: Use the performance metrics panel to analyze trade-offs
 3. **Export Data**: Download CSV files for further analysis
 
 ### Performance Testing
+
 1. **Navigate to Metrics Page**: Access comprehensive algorithm testing
 2. **Run Automated Tests**: Execute predefined test suites with real POI data
 3. **Analyze Results**: Review detailed performance comparisons and visualizations
@@ -214,6 +237,7 @@ WiseExplorer automatically collects and analyzes:
 - **Scalability**: Performance across different problem sizes
 
 ### Metric Categories
+
 - **Route Duration**: Total travel time including POI visits
 - **Route Distance**: Total geographical distance
 - **Algorithm Efficiency**: Execution time vs. solution quality
@@ -225,7 +249,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 🙏 Acknowledgments
 
 - **OpenRouteService** for routing calculations and distance matrices
-- **Leaflet** community for mapping capabilities  
+- **Leaflet** community for mapping capabilities
 - **Material-UI** team for the component library
 - **Research Community** for TSP algorithm implementations and optimizations
 

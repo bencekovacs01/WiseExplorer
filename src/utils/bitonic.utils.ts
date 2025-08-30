@@ -12,76 +12,114 @@ export interface BitonicVariationMetrics {
 
 export async function measureAllBitonicVariations(
   pois: Coordinate[],
-  poiMetadata?: IPoiData[]
+  poiMetadata?: IPoiData[],
 ): Promise<BitonicVariationMetrics> {
   const bitonicService = new BitonicService();
   const pointCount = pois.length;
-  
+
   // Measure West-East strategy
   const weResult = await measurePerformance(
-    () => bitonicService.findBitonicRoute(pois, poiMetadata, 100, SortStrategy.WEST_TO_EAST),
+    () =>
+      bitonicService.findBitonicRoute(
+        pois,
+        poiMetadata,
+        100,
+        SortStrategy.WEST_TO_EAST,
+      ),
     'Bitonic-WE',
-    pointCount
+    pointCount,
   );
-  
+
   // Measure East-West strategy
   const ewResult = await measurePerformance(
-    () => bitonicService.findBitonicRoute(pois, poiMetadata, 100, SortStrategy.EAST_TO_WEST),
+    () =>
+      bitonicService.findBitonicRoute(
+        pois,
+        poiMetadata,
+        100,
+        SortStrategy.EAST_TO_WEST,
+      ),
     'Bitonic-EW',
-    pointCount
+    pointCount,
   );
-  
+
   // Measure South-North strategy
   const snResult = await measurePerformance(
-    () => bitonicService.findBitonicRoute(pois, poiMetadata, 100, SortStrategy.SOUTH_TO_NORTH),
+    () =>
+      bitonicService.findBitonicRoute(
+        pois,
+        poiMetadata,
+        100,
+        SortStrategy.SOUTH_TO_NORTH,
+      ),
     'Bitonic-SN',
-    pointCount
+    pointCount,
   );
-  
+
   // Measure North-South strategy
   const nsResult = await measurePerformance(
-    () => bitonicService.findBitonicRoute(pois, poiMetadata, 100, SortStrategy.NORTH_TO_SOUTH),
+    () =>
+      bitonicService.findBitonicRoute(
+        pois,
+        poiMetadata,
+        100,
+        SortStrategy.NORTH_TO_SOUTH,
+      ),
     'Bitonic-NS',
-    pointCount
+    pointCount,
   );
-  
+
   return {
-    bitonicWE: { 
+    bitonicWE: {
       ...weResult.metrics,
-      clientTotalTime: 0,  // This will be set by the calling code
-      strategy: 'WEST_TO_EAST'
+      clientTotalTime: 0, // This will be set by the calling code
+      strategy: 'WEST_TO_EAST',
     },
-    bitonicEW: { 
+    bitonicEW: {
       ...ewResult.metrics,
       clientTotalTime: 0,
-      strategy: 'EAST_TO_WEST'
+      strategy: 'EAST_TO_WEST',
     },
-    bitonicSN: { 
+    bitonicSN: {
       ...snResult.metrics,
       clientTotalTime: 0,
-      strategy: 'SOUTH_TO_NORTH'
+      strategy: 'SOUTH_TO_NORTH',
     },
-    bitonicNS: { 
+    bitonicNS: {
       ...nsResult.metrics,
       clientTotalTime: 0,
-      strategy: 'NORTH_TO_SOUTH'
-    }
+      strategy: 'NORTH_TO_SOUTH',
+    },
   };
 }
 
 // Return best strategy based on execution time
-export function getBestBitonicStrategy(metrics: BitonicVariationMetrics): SortStrategy {
+export function getBestBitonicStrategy(
+  metrics: BitonicVariationMetrics,
+): SortStrategy {
   const strategies = [
-    { strategy: SortStrategy.WEST_TO_EAST, time: metrics.bitonicWE?.executionTimeMs },
-    { strategy: SortStrategy.EAST_TO_WEST, time: metrics.bitonicEW?.executionTimeMs },
-    { strategy: SortStrategy.SOUTH_TO_NORTH, time: metrics.bitonicSN?.executionTimeMs },
-    { strategy: SortStrategy.NORTH_TO_SOUTH, time: metrics.bitonicNS?.executionTimeMs }
-  ].filter(s => s.time !== undefined);
-  
+    {
+      strategy: SortStrategy.WEST_TO_EAST,
+      time: metrics.bitonicWE?.executionTimeMs,
+    },
+    {
+      strategy: SortStrategy.EAST_TO_WEST,
+      time: metrics.bitonicEW?.executionTimeMs,
+    },
+    {
+      strategy: SortStrategy.SOUTH_TO_NORTH,
+      time: metrics.bitonicSN?.executionTimeMs,
+    },
+    {
+      strategy: SortStrategy.NORTH_TO_SOUTH,
+      time: metrics.bitonicNS?.executionTimeMs,
+    },
+  ].filter((s) => s.time !== undefined);
+
   if (strategies.length === 0) {
     return SortStrategy.WEST_TO_EAST; // Default if no data
   }
-  
+
   // Sort by execution time (fastest first)
   strategies.sort((a, b) => (a.time || Infinity) - (b.time || Infinity));
   return strategies[0].strategy;

@@ -14,29 +14,30 @@ export interface PerformanceMetrics {
 export async function measurePerformance<T>(
   fn: () => Promise<T>,
   algorithm: string,
-  pointCount: number
+  pointCount: number,
 ): Promise<{ result: T; metrics: PerformanceMetrics }> {
   if (global.gc) {
     global.gc();
   }
-  
+
   const memBefore = process.memoryUsage();
   const heapBefore = v8.getHeapStatistics();
-  
+
   const startTime = performance.now();
-  
+
   const result = await fn();
-  
+
   const endTime = performance.now();
   const executionTimeMs = endTime - startTime;
-  
+
   const memAfter = process.memoryUsage();
   const heapAfter = v8.getHeapStatistics();
-  
-  const memoryUsageMB = Math.round(
-    (memAfter.heapUsed - memBefore.heapUsed) / (1024 * 1024) * 100
-  ) / 100;
-  
+
+  const memoryUsageMB =
+    Math.round(
+      ((memAfter.heapUsed - memBefore.heapUsed) / (1024 * 1024)) * 100,
+    ) / 100;
+
   return {
     result,
     metrics: {
@@ -45,7 +46,7 @@ export async function measurePerformance<T>(
       algorithm,
       pointCount,
       timestamp: new Date().toISOString(),
-      clientTotalTime: 0
-    }
+      clientTotalTime: 0,
+    },
   };
 }

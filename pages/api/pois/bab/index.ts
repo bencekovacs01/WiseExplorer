@@ -5,50 +5,47 @@ import { measurePerformance } from '@/src/utils/measurePerformance';
 import BranchAndBoundService from '@/src/services/BranchAndBoundService';
 
 export default async function handler(
-    req: NextApiRequest,
-    res: NextApiResponse,
+  req: NextApiRequest,
+  res: NextApiResponse,
 ) {
-    if (req.method !== 'POST') {
-        return res.status(405).json({ error: 'Method not allowed' });
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  try {
+    const pois: Coordinate[] = req.body?.pois;
+    const poiMetadata: IPoiData[] = req.body?.poiMetadata;
+    const maxClusterDistance: number = req.body?.maxClusterDistance || 100;
+
+    if (!pois || !poiMetadata) {
+      return res.status(400).json({
+        error: 'Please provide the pois and poi metadata.',
+      });
     }
 
-    try {
-        const pois: Coordinate[] = req.body?.pois;
-        const poiMetadata: IPoiData[] = req.body?.poiMetadata;
-        const maxClusterDistance: number = req.body?.maxClusterDistance || 100;
+    const babService = new BranchAndBoundService();
 
-        if (!pois || !poiMetadata) {
-            return res.status(400).json({
-                error: 'Please provide the pois and poi metadata.',
-            });
-        }
+    const { result: route, metrics } = await measurePerformance(
+      () =>
+        babService.findMinimumDistanceRoute(
+          pois,
+          poiMetadata,
+          maxClusterDistance,
+        ),
+      `BranchAndBound`,
+      pois.length,
+    );
+    metrics.algorithm = 'branchAndBound';
 
-        const babService = new BranchAndBoundService();
-
-        const { result: route, metrics } = await measurePerformance(
-            () =>
-                babService.findMinimumDistanceRoute(
-                    pois,
-                    poiMetadata,
-                    maxClusterDistance,
-                ),
-            `BranchAndBound`,
-            pois.length,
-        );
-        metrics.algorithm = 'branchAndBound';
-
-        return res.status(200).json({
-            route,
-            metrics,
-        });
-    } catch (error: any) {
-        console.error('Error in bitonic-time endpoint:', error);
-        return res.status(500).json({
-            message: error.message,
-            stack:
-                process.env.NODE_ENV === 'development'
-                    ? error.stack
-                    : undefined,
-        });
-    }
+    return res.status(200).json({
+      route,
+      metrics,
+    });
+  } catch (error: any) {
+    console.error('Error in bitonic-time endpoint:', error);
+    return res.status(500).json({
+      message: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
+    });
+  }
 }

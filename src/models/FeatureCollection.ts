@@ -1,15 +1,15 @@
 export interface FeatureCollection {
-    type: string;
-    features: Array<Feature>;
+  type: string;
+  features: Array<Feature>;
 }
 
 export interface Feature {
-    type: string;
-    geometry: Geometry;
-    properties: any;
+  type: string;
+  geometry: Geometry;
+  properties: any;
 }
 
 export interface Geometry {
-    type: string;
-    coordinates: [number, number];
+  type: string;
+  coordinates: [number, number];
 }

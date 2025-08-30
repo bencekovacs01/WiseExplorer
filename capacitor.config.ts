@@ -3,7 +3,7 @@ import type { CapacitorConfig } from '@capacitor/cli';
 const config: CapacitorConfig = {
   appId: 'com.wise.explorer',
   appName: 'WiseExplorer',
-  webDir: "out",
+  webDir: 'out',
   server: {
     androidScheme: 'https',
     iosScheme: 'https',
@@ -12,14 +12,14 @@ const config: CapacitorConfig = {
     // hostname: 'localhost:3001',
   },
   android: {
-    backgroundColor: "#ffffff",
+    backgroundColor: '#ffffff',
     allowMixedContent: true,
     webContentsDebuggingEnabled: true,
   },
   ios: {
-    backgroundColor: "#ffffff",
-    contentInset: "always",
-    preferredContentMode: "mobile",
+    backgroundColor: '#ffffff',
+    contentInset: 'always',
+    preferredContentMode: 'mobile',
   },
 };
 

@@ -1,52 +1,52 @@
 import axios from 'axios';
 
 const createAxiosInstance = (baseURL: string, apiKey?: string | undefined) => {
-    const instance = axios.create({
-        baseURL,
-        timeout: 10000,
-        headers: {
-            'Content-Type': 'application/json',
-        },
-    });
+  const instance = axios.create({
+    baseURL,
+    timeout: 10000,
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
 
-    instance.interceptors.request.use(
-        (config) => {
-            if (apiKey !== undefined) {
-                if (!apiKey) {
-                    return Promise.reject({
-                        message: 'OpenRouteService API key error!',
-                    });
-                }
+  instance.interceptors.request.use(
+    (config) => {
+      if (apiKey !== undefined) {
+        if (!apiKey) {
+          return Promise.reject({
+            message: 'OpenRouteService API key error!',
+          });
+        }
 
-                config.params = {
-                    ...config.params,
-                    api_key: apiKey,
-                };
+        config.params = {
+          ...config.params,
+          api_key: apiKey,
+        };
 
-                config.headers['Content-Type'] = 'application/json';
-                config.headers['Authorization'] = apiKey;
-            }
-            return config;
-        },
-        (error) => Promise.reject(error),
-    );
+        config.headers['Content-Type'] = 'application/json';
+        config.headers['Authorization'] = apiKey;
+      }
+      return config;
+    },
+    (error) => Promise.reject(error),
+  );
 
-    instance.interceptors.response.use(
-        (response) => response,
-        (error) => {
-            return Promise.reject(error);
-        },
-    );
+  instance.interceptors.response.use(
+    (response) => response,
+    (error) => {
+      return Promise.reject(error);
+    },
+  );
 
-    return instance;
+  return instance;
 };
 
 const ORS_KEY = process.env.ORS_KEY;
 const axiosORS = createAxiosInstance(
-    'https://api.openrouteservice.org/v2',
-    // 'http://localhost:8080/v2',
+  'https://api.openrouteservice.org/v2',
+  // 'http://localhost:8080/v2',
 
-    ORS_KEY,
+  ORS_KEY,
 );
 const axiosEW = createAxiosInstance('/api/pois', undefined);
 
