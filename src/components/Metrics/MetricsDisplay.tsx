@@ -57,18 +57,19 @@ const RouteDurationChart: React.FC<ChartProps> = ({
     ...metricsWithDuration.map((m) => m.routeDuration || 0),
   );
 
-  return (
-    <Paper sx={{ p: 3, mt: 2 }}>
-      <Typography variant="h6" gutterBottom>
-        {title}
-      </Typography>
-      <Box sx={{ mt: 2 }}>
-        {sortedMetrics.map((metric, index) => {
-          const routeTime = metric.routeDuration || 0;
-          const percentage = maxTime > 0 ? (routeTime / maxTime) * 100 : 0;
-          const algorithmLabel = metric.variant
-            ? `${metric.algorithmName} (${metric.variant})`
-            : metric.algorithmName;
+    return (
+        <Paper sx={{ p: 3, mt: 2 }}>
+            <Typography variant="h6" gutterBottom>
+                {title}
+            </Typography>
+            <Box sx={{ mt: 2 }}>
+                {sortedMetrics.map((metric, index) => {
+                    const routeTime = metric.routeTotalTime || 0;
+                    const percentage =
+                        maxTime > 0 ? (routeTime / maxTime) * 100 : 0;
+                    const algorithmLabel = metric.variant
+                        ? `${metric.algorithmName} (${metric.variant})`
+                        : metric.algorithmName;
 
           return (
             <Box key={index} sx={{ mb: 2 }}>
@@ -336,35 +337,35 @@ export const MetricsDisplay: React.FC = () => {
       group90: [] as AlgorithmMetrics[],
     };
 
-    groups.group15 = deduplicatedMetrics.filter(
-      (m) =>
-        m.nodeCount === 15 &&
-        (m.algorithmName === 'BranchAndBound' ||
-          m.algorithmName === 'DynamicProgramming' ||
-          m.algorithmName === 'Greedy' ||
-          m.algorithmName === 'ACO' ||
-          m.algorithmName === 'Bitonic' ||
-          m.algorithmName === 'Arora PTAS'),
-    );
+        groups.group15 = deduplicatedMetrics.filter(
+            (m) =>
+                m.nodeCount === 15 &&
+                // m.algorithmName === 'BranchAndBound' ||
+                (m.algorithmName === 'DynamicProgramming' ||
+                    // m.algorithmName === 'Greedy' ||
+                    // m.algorithmName === 'ACO' ||
+                    m.algorithmName === 'Bitonic' ||
+                    m.algorithmName === 'Arora PTAS'),
+        );
 
-    groups.group30 = deduplicatedMetrics.filter(
-      (m) =>
-        m.nodeCount === 30 &&
-        (m.algorithmName === 'DynamicProgramming' ||
-          m.algorithmName === 'Greedy' ||
-          m.algorithmName === 'ACO' ||
-          m.algorithmName === 'Bitonic' ||
-          m.algorithmName === 'Arora PTAS'),
-    );
+        groups.group30 = deduplicatedMetrics.filter(
+            (m) =>
+                m.nodeCount === 30 &&
+                (m.algorithmName === 'DynamicProgramming' ||
+                    // m.algorithmName === 'Greedy' ||
+                    // m.algorithmName === 'ACO' ||
+                    m.algorithmName === 'Bitonic' ||
+                    m.algorithmName === 'Arora PTAS'),
+        );
 
-    groups.group90 = deduplicatedMetrics.filter(
-      (m) =>
-        m.nodeCount === 90 &&
-        (m.algorithmName === 'ACO' ||
-          m.algorithmName === 'Greedy' ||
-          m.algorithmName === 'Bitonic' ||
-          m.algorithmName === 'Arora PTAS'),
-    );
+        groups.group90 = deduplicatedMetrics.filter(
+            (m) =>
+                m.nodeCount === 90 &&
+                // m.algorithmName === 'ACO' ||
+                // m.algorithmName === 'Greedy' ||
+                (m.algorithmName === 'Bitonic' ||
+                    m.algorithmName === 'Arora PTAS'),
+        );
 
     return groups;
   }, [deduplicatedMetrics]);
@@ -967,46 +968,50 @@ export const MetricsDisplay: React.FC = () => {
           {renderMetricsTable(algorithmGroups.group15, '15-node comparison')}
         </TabPanel>
 
-        <TabPanel value={activeTab} index={1}>
-          <Typography variant="h6" gutterBottom>
-            Dynamic Programming vs ACO vs Bitonic vs Arora PTAS (30 Nodes)
-          </Typography>
-          <RouteDurationChart
-            metrics={algorithmGroups.group30}
-            title="Route Duration Comparison - 30 Nodes"
-          />
-          <RouteDistanceChart
-            metrics={algorithmGroups.group30}
-            title="Route Distance Comparison - 30 Nodes"
-          />
-          <ExecutionTimeChart
-            metrics={algorithmGroups.group30}
-            title="Algorithm Execution Time - 30 Nodes"
-          />
-          {renderMetricsTable(algorithmGroups.group30, '30-node comparison')}
-        </TabPanel>
+                <TabPanel value={activeTab} index={1}>
+                    <Typography variant="h6" gutterBottom>
+                        Dynamic Programming vs ACO vs Bitonic vs Arora PTAS (30 Nodes)
+                    </Typography>
+                    <RouteDurationChart
+                        metrics={algorithmGroups.group30}
+                        title="Route Duration Comparison - 30 Nodes"
+                    />
+                    <RouteDistanceChart
+                        metrics={algorithmGroups.group30}
+                        title="Route Distance Comparison - 30 Nodes"
+                    />
+                    <ExecutionTimeChart
+                        metrics={algorithmGroups.group30}
+                        title="Algorithm Execution Time - 30 Nodes"
+                    />
+                    {renderMetricsTable(
+                        algorithmGroups.group30,
+                        '30-node comparison',
+                    )}
+                </TabPanel>
 
-        <TabPanel value={activeTab} index={2}>
-          <Typography variant="h6" gutterBottom>
-            ACO vs Bitonic vs Arora PTAS Strategy Comparison (90 Nodes)
-          </Typography>
-          <RouteDurationChart
-            metrics={algorithmGroups.group90}
-            title="Route Duration Comparison (90 Nodes)"
-          />
-          <RouteDistanceChart
-            metrics={algorithmGroups.group90}
-            title="Route Distance Comparison (90 Nodes)"
-          />
-          <ExecutionTimeChart
-            metrics={algorithmGroups.group90}
-            title="Algorithm Execution Time (90 Nodes)"
-          />
-          {renderMetricsTable(algorithmGroups.group90, '90-node')}
-        </TabPanel>
-      </Box>
-    );
-  };
+                <TabPanel value={activeTab} index={2}>
+                    <Typography variant="h6" gutterBottom>
+                        ACO vs Bitonic vs Arora PTAS Strategy Comparison (90
+                        Nodes)
+                    </Typography>
+                    <RouteDurationChart
+                        metrics={algorithmGroups.group90}
+                        title="Route Duration Comparison (90 Nodes)"
+                    />
+                    <RouteDistanceChart
+                        metrics={algorithmGroups.group90}
+                        title="Route Distance Comparison (90 Nodes)"
+                    />
+                    <ExecutionTimeChart
+                        metrics={algorithmGroups.group90}
+                        title="Algorithm Execution Time (90 Nodes)"
+                    />
+                    {renderMetricsTable(algorithmGroups.group90, '90-node')}
+                </TabPanel>
+            </Box>
+        );
+    };
 
   if (deduplicatedMetrics.length === 0) {
     return (
